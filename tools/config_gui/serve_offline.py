@@ -497,9 +497,17 @@ class Handler(BaseHTTPRequestHandler):
         if not os.path.isdir(DIST):
             raise ApiError(500, "frontend/dist not found -- ship the prebuilt UI")
         rel = path.lstrip("/") or "index.html"
-        full = os.path.normpath(os.path.join(DIST, rel))
-        # prevent path traversal outside dist; SPA fallback to index.html
-        if not full.startswith(os.path.abspath(DIST)) or not os.path.isfile(full):
+        dist_root = os.path.abspath(DIST)
+        full = os.path.abspath(os.path.join(DIST, rel))
+        if not full.startswith(dist_root):
+            raise ApiError(404, "not found")           # block path traversal
+        if not os.path.isfile(full):
+            # A missing hashed asset means a stale/partial frontend/dist copy.
+            # Surface it as a real 404 instead of silently serving index.html as
+            # JS/CSS (browsers reject the mismatched MIME type -> blank page).
+            # Only fall back to index.html for extension-less SPA route paths.
+            if os.path.splitext(rel)[1]:
+                raise ApiError(404, "missing asset '%s' -- re-copy frontend/dist" % rel)
             full = os.path.join(DIST, "index.html")
         with open(full, "rb") as fh:
             data = fh.read()
@@ -507,6 +515,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", CONTENT_TYPES.get(ext, "application/octet-stream"))
         self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store, must-revalidate")
         self.end_headers()
         self.wfile.write(data)
 
