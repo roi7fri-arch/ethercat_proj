@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "network": {
+    "interface": "eth0",
+    "cycle_time_us": 250,
+    "number_of_cycles": 12000,
+    "distributed_clock": true,
+    "sync0_shift_us": 0,
+    "sync_kp_div": 100,
+    "sync_ki_div": 20
+  },
+  "slaves": [
+    {
+      "position": 1,
+      "name": "Elmo Platinum",
+      "mode_of_operation": 8,
+      "rxpdo": [
+        {
+          "index": "0x6040",
+          "subindex": 0,
+          "bitlen": 16,
+          "name": "Controlword"
+        },
+        {
+          "index": "0x60B0",
+          "subindex": 0,
+          "bitlen": 32,
+          "name": "Position offset"
+        },
+        {
+          "index": "0x60B1",
+          "subindex": 0,
+          "bitlen": 32,
+          "name": "Velocity offset"
+        },
+        {
+          "index": "0x60B2",
+          "subindex": 0,
+          "bitlen": 16,
+          "name": "Torque offset"
+        }
+      ],
+      "txpdo": [
+        {
+          "index": "0x6041",
+          "subindex": 0,
+          "bitlen": 16,
+          "name": "Statusword"
+        },
+        {
+          "index": "0x6061",
+          "subindex": 0,
+          "bitlen": 8,
+          "name": "Modes of operation display"
+        },
+        {
+          "index": "0x603F",
+          "subindex": 0,
+          "bitlen": 16,
+          "name": "Error code"
+        },
+        {
+          "index": "0x6062",
+          "subindex": 0,
+          "bitlen": 32,
+          "name": "Position demand value"
+        },
+        {
+          "index": "0x606B",
+          "subindex": 0,
+          "bitlen": 32,
+          "name": "Velocity demand value"
+        },
+        {
+          "index": "0x6074",
+          "subindex": 0,
+          "bitlen": 16,
+          "name": "Torque demand"
+        },
+        {
+          "index": "0x6064",
+          "subindex": 0,
+          "bitlen": 32,
+          "name": "Position actual value"
+        },
+        {
+          "index": "0x606C",
+          "subindex": 0,
+          "bitlen": 32,
+          "name": "Velocity actual value"
+        },
+        {
+          "index": "0x6077",
+          "subindex": 0,
+          "bitlen": 16,
+          "name": "Torque actual value"
+        },
+        {
+          "index": "0x6078",
+          "subindex": 0,
+          "bitlen": 16,
+          "name": "Current actual value"
+        },
+        {
+          "index": "0x60F4",
+          "subindex": 0,
+          "bitlen": 32,
+          "name": "Following error actual value"
+        },
+        {
+          "index": "0x3610",
+          "subindex": 0,
+          "bitlen": 32,
+          "name": "Elmo: manufacturer object"
+        },
+        {
+          "index": "0x3640",
+          "subindex": 0,
+          "bitlen": 32,
+          "name": "Elmo: manufacturer object"
+        }
+      ]
+    }
+  ]
+}

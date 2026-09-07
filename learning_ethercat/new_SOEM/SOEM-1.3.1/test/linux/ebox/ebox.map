@@ -1,0 +1,1282 @@
+Archive member included to satisfy reference by file (symbol)
+
+/mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+                              obj/linux/ebox.o (ec_SDOwrite)
+/mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                              obj/linux/ebox.o (ec_config_init)
+/mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+                              obj/linux/ebox.o (ec_dcsync0)
+/mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                              obj/linux/ebox.o (ec_slave)
+/mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+                              /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o) (ecx_readIDNmap)
+/mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                              /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o) (ecx_setupdatagram)
+/usr/lib/x86_64-linux-gnu/libc_nonshared.a(elf-init.oS)
+                              /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o (__libc_csu_init)
+/mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                              /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o) (secMAC)
+/mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+                              /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o) (oshw_htons)
+/mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+                              /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o) (osal_usleep)
+
+As-needed library included to satisfy reference by file (symbol)
+
+libc.so.6                     /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o) (strcpy@@GLIBC_2.2.5)
+libpthread.so.0               obj/linux/ebox.o (pthread_create@@GLIBC_2.2.5)
+
+Allocating common symbols
+Common symbol       size              file
+
+IOmap               0x1000            obj/linux/ebox.o
+ecx_port            0xcb30            /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ecx_redport         0x6590            /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ecx_mapt            0xc0              /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ob3                 0x1               obj/linux/ebox.o
+os                  0x4               obj/linux/ebox.o
+t1                  0x10              obj/linux/ebox.o
+ecx_threadh         0x40              /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ec_DCtime           0x8               /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+thread1             0x8               obj/linux/ebox.o
+ainc                0x4               obj/linux/ebox.o
+stream1             0x61a80           obj/linux/ebox.o
+ain                 0x10              obj/linux/ebox.o
+ec_slavecount       0x4               /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ob2                 0x2               obj/linux/ebox.o
+ob                  0x4               obj/linux/ebox.o
+t2                  0x10              obj/linux/ebox.o
+cyclecount          0x4               obj/linux/ebox.o
+in_EBOX             0x8               obj/linux/ebox.o
+tv                  0x10              obj/linux/ebox.o
+stream2             0x61a80           obj/linux/ebox.o
+schedp              0x4               obj/linux/ebox.o
+DCdiff              0x4               obj/linux/ebox.o
+toff                0x8               obj/linux/ebox.o
+ec_group            0x270             /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ec_slave            0x10040           /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+deltat              0x4               obj/linux/ebox.o
+streampos           0x4               obj/linux/ebox.o
+out_EBOX            0x8               obj/linux/ebox.o
+
+Discarded input sections
+
+ .rodata.cst4   0x0000000000000000        0x4 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .data          0x0000000000000000        0x4 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .bss           0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .text          0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o
+ .data          0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o
+ .bss           0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o
+ .data          0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o
+ .text          0x0000000000000000        0x0 obj/linux/ebox.o
+ .data          0x0000000000000000        0x0 obj/linux/ebox.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 obj/linux/ebox.o
+ .text          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .data          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .bss           0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ecx_SDOinfoerror
+                0x0000000000000000       0xb0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ecx_RxPDO
+                0x0000000000000000      0x1f3 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ecx_TxPDO
+                0x0000000000000000      0x2d7 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ecx_readODlist
+                0x0000000000000000      0x42b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ecx_readODdescription
+                0x0000000000000000      0x417 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ecx_readOEsingle
+                0x0000000000000000      0x3f9 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ecx_readOE
+                0x0000000000000000       0x97 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_SDOerror
+                0x0000000000000000       0x44 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_SDOread
+                0x0000000000000000       0x64 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_RxPDO
+                0x0000000000000000       0x44 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_TxPDO
+                0x0000000000000000       0x52 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_readPDOassign
+                0x0000000000000000       0x2f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_readPDOassignCA
+                0x0000000000000000       0x2f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_readPDOmap
+                0x0000000000000000       0x37 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_readPDOmapCA
+                0x0000000000000000       0x37 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_readODlist
+                0x0000000000000000       0x2b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_readODdescription
+                0x0000000000000000       0x2b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_readOEsingle
+                0x0000000000000000       0x45 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text.ec_readOE
+                0x0000000000000000       0x37 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .note.GNU-stack
+                0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .text          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .data          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .bss           0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ecx_recover_slave
+                0x0000000000000000      0x39c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ecx_reconfig_slave
+                0x0000000000000000      0x34c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ec_config
+                0x0000000000000000       0x3a /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ec_recover_slave
+                0x0000000000000000       0x2b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ec_reconfig_slave
+                0x0000000000000000       0x2b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .note.GNU-stack
+                0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .data          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .bss           0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .text.print_sync0
+                0x0000000000000000       0x72 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .text.ecx_dcsync01
+                0x0000000000000000      0x264 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .text.ec_dcsync01
+                0x0000000000000000       0x4e /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .note.GNU-stack
+                0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .text          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .data          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_find_adapters
+                0x0000000000000000       0x18 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_free_adapters
+                0x0000000000000000       0x1c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_poperror
+                0x0000000000000000       0xfd /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_iserror
+                0x0000000000000000       0x25 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_init_redundant
+                0x0000000000000000      0x120 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_esidump
+                0x0000000000000000      0x163 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_readeeprom
+                0x0000000000000000       0x7e /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_writeeeprom
+                0x0000000000000000       0x8c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_eeprom_waitnotbusyAP
+                0x0000000000000000      0x113 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_readeepromAP
+                0x0000000000000000      0x273 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_writeeepromAP
+                0x0000000000000000      0x208 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_writeeepromFP
+                0x0000000000000000      0x208 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_send_processdata
+                0x0000000000000000       0x20 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_receive_processdata
+                0x0000000000000000       0x28 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_pusherror
+                0x0000000000000000       0x21 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_poperror
+                0x0000000000000000       0x20 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_iserror
+                0x0000000000000000        0xd /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_packeterror
+                0x0000000000000000       0x46 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_init_redundant
+                0x0000000000000000       0x34 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_siigetbyte
+                0x0000000000000000       0x2f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_siifind
+                0x0000000000000000       0x2f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_siistring
+                0x0000000000000000       0x3b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_siiFMMU
+                0x0000000000000000       0x2b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_siiSM
+                0x0000000000000000       0x2b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_siiSMnext
+                0x0000000000000000       0x39 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_siiPDO
+                0x0000000000000000       0x38 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_mbxempty
+                0x0000000000000000       0x2b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_mbxsend
+                0x0000000000000000       0x33 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_mbxreceive
+                0x0000000000000000       0x33 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_esidump
+                0x0000000000000000       0x2c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_readeeprom
+                0x0000000000000000       0x39 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_writeeeprom
+                0x0000000000000000       0x44 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_eeprom2master
+                0x0000000000000000       0x23 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_eeprom2pdi
+                0x0000000000000000       0x23 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_eeprom_waitnotbusyAP
+                0x0000000000000000       0x33 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_readeepromAP
+                0x0000000000000000       0x39 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_writeeepromAP
+                0x0000000000000000       0x44 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_eeprom_waitnotbusyFP
+                0x0000000000000000       0x33 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_readeepromFP
+                0x0000000000000000       0x39 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_writeeepromFP
+                0x0000000000000000       0x44 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_readeeprom1
+                0x0000000000000000       0x30 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ec_readeeprom2
+                0x0000000000000000       0x2b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .note.GNU-stack
+                0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .data          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .bss           0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .text.ecx_SoEwrite
+                0x0000000000000000      0x476 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .text.ec_SoEread
+                0x0000000000000000       0x64 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .text.ec_SoEwrite
+                0x0000000000000000       0x64 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .text.ec_readIDNmap
+                0x0000000000000000       0x37 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .note.GNU-stack
+                0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .text          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .data          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .bss           0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ecx_ARMW
+                0x0000000000000000      0x101 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ecx_FRMW
+                0x0000000000000000      0x101 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ecx_LRW  0x0000000000000000      0x124 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ecx_LRD  0x0000000000000000      0x124 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ecx_LWR  0x0000000000000000       0xc9 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ecx_LRWDC
+                0x0000000000000000      0x23b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_setupdatagram
+                0x0000000000000000       0x6e /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_adddatagram
+                0x0000000000000000       0x83 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_BWR   0x0000000000000000       0x54 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_BRD   0x0000000000000000       0x54 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_APRD  0x0000000000000000       0x54 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_ARMW  0x0000000000000000       0x54 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_FRMW  0x0000000000000000       0x54 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_APRDw
+                0x0000000000000000       0x73 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_FPRD  0x0000000000000000       0x54 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_FPRDw
+                0x0000000000000000       0x73 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_APWR  0x0000000000000000       0x54 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_APWRw
+                0x0000000000000000       0x45 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_FPWR  0x0000000000000000       0x54 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_FPWRw
+                0x0000000000000000       0x45 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_LRW   0x0000000000000000       0x40 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_LRD   0x0000000000000000       0x40 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_LWR   0x0000000000000000       0x40 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ec_LRWDC
+                0x0000000000000000       0x61 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .note.GNU-stack
+                0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .data          0x0000000000000000        0x0 /usr/lib/x86_64-linux-gnu/libc_nonshared.a(elf-init.oS)
+ .bss           0x0000000000000000        0x0 /usr/lib/x86_64-linux-gnu/libc_nonshared.a(elf-init.oS)
+ .note.GNU-stack
+                0x0000000000000000        0x0 /usr/lib/x86_64-linux-gnu/libc_nonshared.a(elf-init.oS)
+ .text          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .data          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .bss           0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .rodata        0x0000000000000000        0xc /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ec_setupnic
+                0x0000000000000000       0x2a /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ec_closenic
+                0x0000000000000000       0x15 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ec_getindex
+                0x0000000000000000       0x15 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ec_setbufstat
+                0x0000000000000000       0x26 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ec_outframe
+                0x0000000000000000       0x27 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ec_outframe_red
+                0x0000000000000000       0x1f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ec_inframe
+                0x0000000000000000       0x27 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ec_waitinframe
+                0x0000000000000000       0x27 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ec_srconfirm
+                0x0000000000000000       0x27 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .note.GNU-stack
+                0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .data          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .bss           0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .text.oshw_htons
+                0x0000000000000000       0x26 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .text.oshw_ntohs
+                0x0000000000000000       0x26 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .text.oshw_find_adapters
+                0x0000000000000000      0x19e /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .text.oshw_free_adapters
+                0x0000000000000000       0x67 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .note.GNU-stack
+                0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .text          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+ .data          0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+ .bss           0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+ .text.osal_time_diff
+                0x0000000000000000       0x75 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+ .text.osal_malloc
+                0x0000000000000000       0x1b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+ .text.osal_free
+                0x0000000000000000       0x1c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+ .text.osal_thread_create_rt
+                0x0000000000000000       0xf8 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+ .note.GNU-stack
+                0x0000000000000000        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+ .text          0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o
+ .data          0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o
+ .bss           0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o
+ .text          0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o
+ .data          0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o
+ .bss           0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o
+LOAD obj/linux/ebox.o
+START GROUP
+LOAD /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a
+LOAD /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a
+LOAD /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/libc.so
+START GROUP
+LOAD /lib/x86_64-linux-gnu/libc.so.6
+LOAD /usr/lib/x86_64-linux-gnu/libc_nonshared.a
+LOAD /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+END GROUP
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/libm.so
+START GROUP
+LOAD /lib/x86_64-linux-gnu/libm.so.6
+LOAD /usr/lib/x86_64-linux-gnu/libmvec_nonshared.a
+LOAD /lib/x86_64-linux-gnu/libmvec.so.1
+END GROUP
+END GROUP
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/libpthread.so
+START GROUP
+LOAD /lib/x86_64-linux-gnu/libpthread.so.0
+LOAD /usr/lib/x86_64-linux-gnu/libpthread_nonshared.a
+END GROUP
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/librt.so
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/libgcc.a
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/libgcc_s.so
+START GROUP
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/libgcc_s.so.1
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/libgcc.a
+END GROUP
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/libc.so
+START GROUP
+LOAD /lib/x86_64-linux-gnu/libc.so.6
+LOAD /usr/lib/x86_64-linux-gnu/libc_nonshared.a
+LOAD /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+END GROUP
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/libgcc.a
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/libgcc_s.so
+START GROUP
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/libgcc_s.so.1
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/libgcc.a
+END GROUP
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o
+LOAD /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o
+                [!provide]                        PROVIDE (__executable_start = SEGMENT_START ("text-segment", 0x0))
+                0x0000000000000238                . = (SEGMENT_START ("text-segment", 0x0) + SIZEOF_HEADERS)
+
+.interp         0x0000000000000238       0x1c
+ *(.interp)
+ .interp        0x0000000000000238       0x1c /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.note.ABI-tag   0x0000000000000254       0x20
+ .note.ABI-tag  0x0000000000000254       0x20 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.note.gnu.build-id
+                0x0000000000000274       0x24
+ *(.note.gnu.build-id)
+ .note.gnu.build-id
+                0x0000000000000274       0x24 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.hash
+ *(.hash)
+
+.gnu.hash       0x0000000000000298       0x1c
+ *(.gnu.hash)
+ .gnu.hash      0x0000000000000298       0x1c /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.dynsym         0x00000000000002b8      0x3c0
+ *(.dynsym)
+ .dynsym        0x00000000000002b8      0x3c0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.dynstr         0x0000000000000678      0x222
+ *(.dynstr)
+ .dynstr        0x0000000000000678      0x222 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.gnu.version    0x000000000000089a       0x50
+ *(.gnu.version)
+ .gnu.version   0x000000000000089a       0x50 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.gnu.version_d  0x00000000000008f0        0x0
+ *(.gnu.version_d)
+ .gnu.version_d
+                0x00000000000008f0        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.gnu.version_r  0x00000000000008f0       0x80
+ *(.gnu.version_r)
+ .gnu.version_r
+                0x00000000000008f0       0x80 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.rela.dyn       0x0000000000000970      0x228
+ *(.rela.init)
+ *(.rela.text .rela.text.* .rela.gnu.linkonce.t.*)
+ .rela.text.output_cvs
+                0x0000000000000970        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .rela.text.eboxtest
+                0x0000000000000970        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .rela.text.ecatthread
+                0x0000000000000970        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .rela.text.main
+                0x0000000000000970        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .rela.text.ecx_find_mapt
+                0x0000000000000970        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .rela.text.ecx_get_threadcount
+                0x0000000000000970        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .rela.text.ecx_config_map_group
+                0x0000000000000970        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .rela.text     0x0000000000000970        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ *(.rela.fini)
+ *(.rela.rodata .rela.rodata.* .rela.gnu.linkonce.r.*)
+ *(.rela.data .rela.data.* .rela.gnu.linkonce.d.*)
+ .rela.data.rel.ro
+                0x0000000000000970        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .rela.data.rel.local
+                0x0000000000000970      0x180 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ *(.rela.tdata .rela.tdata.* .rela.gnu.linkonce.td.*)
+ *(.rela.tbss .rela.tbss.* .rela.gnu.linkonce.tb.*)
+ *(.rela.ctors)
+ *(.rela.dtors)
+ *(.rela.got)
+ .rela.got      0x0000000000000af0       0x78 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ *(.rela.bss .rela.bss.* .rela.gnu.linkonce.b.*)
+ .rela.bss      0x0000000000000b68        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ *(.rela.ldata .rela.ldata.* .rela.gnu.linkonce.l.*)
+ *(.rela.lbss .rela.lbss.* .rela.gnu.linkonce.lb.*)
+ *(.rela.lrodata .rela.lrodata.* .rela.gnu.linkonce.lr.*)
+ *(.rela.ifunc)
+ .rela.ifunc    0x0000000000000b68        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .rela.fini_array
+                0x0000000000000b68       0x18 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .rela.init_array
+                0x0000000000000b80       0x18 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.rela.plt       0x0000000000000b98      0x330
+ *(.rela.plt)
+ .rela.plt      0x0000000000000b98      0x330 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+                [!provide]                        PROVIDE (__rela_iplt_start = .)
+ *(.rela.iplt)
+                [!provide]                        PROVIDE (__rela_iplt_end = .)
+
+.init           0x0000000000000ec8       0x17
+ *(SORT_NONE(.init))
+ .init          0x0000000000000ec8       0x12 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o
+                0x0000000000000ec8                _init
+ .init          0x0000000000000eda        0x5 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o
+
+.plt            0x0000000000000ee0      0x230
+ *(.plt)
+ .plt           0x0000000000000ee0      0x230 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ *(.iplt)
+
+.plt.got        0x0000000000001110        0x8
+ *(.plt.got)
+ .plt.got       0x0000000000001110        0x8 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.plt.sec
+ *(.plt.sec)
+
+.text           0x0000000000001120     0xfa19
+ *(.text.unlikely .text.*_unlikely .text.unlikely.*)
+ *(.text.exit .text.exit.*)
+ *(.text.startup .text.startup.*)
+ *(.text.hot .text.hot.*)
+ *(.text .stub .text.* .gnu.linkonce.t.*)
+ .text          0x0000000000001120       0x2b /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+                0x0000000000001120                _start
+ *fill*         0x000000000000114b        0x5 
+ .text          0x0000000000001150       0xda /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o
+ .text.output_cvs
+                0x000000000000122a       0xb5 obj/linux/ebox.o
+                0x000000000000122a                output_cvs
+ .text.eboxtest
+                0x00000000000012df      0x670 obj/linux/ebox.o
+                0x00000000000012df                eboxtest
+ .text.add_timespec
+                0x000000000000194f      0x158 obj/linux/ebox.o
+                0x000000000000194f                add_timespec
+ .text.ec_sync  0x0000000000001aa7       0xe0 obj/linux/ebox.o
+                0x0000000000001aa7                ec_sync
+ .text.ecatthread
+                0x0000000000001b87      0x266 obj/linux/ebox.o
+                0x0000000000001b87                ecatthread
+ .text.main     0x0000000000001ded      0x17c obj/linux/ebox.o
+                0x0000000000001ded                main
+ .text.ecx_SDOerror
+                0x0000000000001f69       0xba /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+                0x0000000000001f69                ecx_SDOerror
+ .text.ecx_SDOread
+                0x0000000000002023      0x728 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+                0x0000000000002023                ecx_SDOread
+ .text.ecx_SDOwrite
+                0x000000000000274b      0x87f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+                0x000000000000274b                ecx_SDOwrite
+ .text.ecx_readPDOassign
+                0x0000000000002fca      0x269 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+                0x0000000000002fca                ecx_readPDOassign
+ .text.ecx_readPDOassignCA
+                0x0000000000003233      0x1ec /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+                0x0000000000003233                ecx_readPDOassignCA
+ .text.ecx_readPDOmap
+                0x000000000000341f      0x34c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+                0x000000000000341f                ecx_readPDOmap
+ .text.ecx_readPDOmapCA
+                0x000000000000376b      0x304 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+                0x000000000000376b                ecx_readPDOmapCA
+ .text.ec_SDOwrite
+                0x0000000000003a6f       0x64 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+                0x0000000000003a6f                ec_SDOwrite
+ .text.ec_findconfig
+                0x0000000000003ad3       0xc0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                0x0000000000003ad3                ec_findconfig
+ .text.ecx_init_context
+                0x0000000000003b93       0xd8 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                0x0000000000003b93                ecx_init_context
+ .text.ecx_detect_slaves
+                0x0000000000003c6b      0x10f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                0x0000000000003c6b                ecx_detect_slaves
+ .text.ecx_set_slaves_to_default
+                0x0000000000003d7a      0x295 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ecx_config_from_table
+                0x000000000000400f      0x3cc /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ecx_lookup_prev_sii
+                0x00000000000043db      0x751 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ecx_config_init
+                0x0000000000004b2c     0x1790 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                0x0000000000004b2c                ecx_config_init
+ .text.ecx_lookup_mapping
+                0x00000000000062bc      0x33b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ecx_map_coe_soe
+                0x00000000000065f7      0x31d /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ecx_map_sii
+                0x0000000000006914      0x332 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ecx_map_sm
+                0x0000000000006c46      0x45f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ecx_mapper_thread
+                0x00000000000070a5       0x43 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                0x00000000000070a5                ecx_mapper_thread
+ .text.ecx_find_mapt
+                0x00000000000070e8       0x4d /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ecx_get_threadcount
+                0x0000000000007135       0x48 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .text.ecx_config_map_group
+                0x000000000000717d     0x1dc0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                0x000000000000717d                ecx_config_map_group
+ .text.ec_config_init
+                0x0000000000008f3d       0x22 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                0x0000000000008f3d                ec_config_init
+ .text.ec_config_map_group
+                0x0000000000008f5f       0x2d /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                0x0000000000008f5f                ec_config_map_group
+ .text.ec_config_map
+                0x0000000000008f8c       0x20 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                0x0000000000008f8c                ec_config_map
+ .text.ecx_dcsync0
+                0x0000000000008fac      0x315 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+                0x0000000000008fac                ecx_dcsync0
+ .text.ecx_porttime
+                0x00000000000092c1      0x118 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .text.ecx_prevport
+                0x00000000000093d9      0x184 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .text.ecx_parentport
+                0x000000000000955d       0xd8 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .text.ecx_configdc
+                0x0000000000009635      0xe04 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+                0x0000000000009635                ecx_configdc
+ .text.ec_dcsync0
+                0x000000000000a439       0x40 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+                0x000000000000a439                ec_dcsync0
+ .text.ec_configdc
+                0x000000000000a479       0x15 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+                0x000000000000a479                ec_configdc
+ .text.ecx_pusherror
+                0x000000000000a48e      0x11c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000a48e                ecx_pusherror
+ .text.ecx_packeterror
+                0x000000000000a5aa       0xc1 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000a5aa                ecx_packeterror
+ .text.ecx_mbxerror
+                0x000000000000a66b       0xa0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_mbxemergencyerror
+                0x000000000000a70b       0xed /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_init
+                0x000000000000a7f8       0x2e /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000a7f8                ecx_init
+ .text.ecx_close
+                0x000000000000a826       0x1f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000a826                ecx_close
+ .text.ecx_siigetbyte
+                0x000000000000a845      0x2a9 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000a845                ecx_siigetbyte
+ .text.ecx_siifind
+                0x000000000000aaee      0x1d4 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000aaee                ecx_siifind
+ .text.ecx_siistring
+                0x000000000000acc2      0x1e8 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000acc2                ecx_siistring
+ .text.ecx_siiFMMU
+                0x000000000000aeaa      0x226 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000aeaa                ecx_siiFMMU
+ .text.ecx_siiSM
+                0x000000000000b0d0      0x2c2 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000b0d0                ecx_siiSM
+ .text.ecx_siiSMnext
+                0x000000000000b392      0x249 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000b392                ecx_siiSMnext
+ .text.ecx_siiPDO
+                0x000000000000b5db      0x4e8 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000b5db                ecx_siiPDO
+ .text.ecx_FPRD_multi
+                0x000000000000bac3      0x301 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000bac3                ecx_FPRD_multi
+ .text.ecx_readstate
+                0x000000000000bdc4      0x336 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000bdc4                ecx_readstate
+ .text.ecx_writestate
+                0x000000000000c0fa      0x121 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000c0fa                ecx_writestate
+ .text.ecx_statecheck
+                0x000000000000c21b      0x1da /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000c21b                ecx_statecheck
+ .text.ec_nextmbxcnt
+                0x000000000000c3f5       0x24 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000c3f5                ec_nextmbxcnt
+ .text.ec_clearmbx
+                0x000000000000c419       0x26 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000c419                ec_clearmbx
+ .text.ecx_mbxempty
+                0x000000000000c43f      0x12c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000c43f                ecx_mbxempty
+ .text.ecx_mbxsend
+                0x000000000000c56b      0x12d /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000c56b                ecx_mbxsend
+ .text.ecx_mbxreceive
+                0x000000000000c698      0x46f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000c698                ecx_mbxreceive
+ .text.ecx_eeprom2master
+                0x000000000000cb07      0x181 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000cb07                ecx_eeprom2master
+ .text.ecx_eeprom2pdi
+                0x000000000000cc88      0x12c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000cc88                ecx_eeprom2pdi
+ .text.ecx_eeprom_waitnotbusyFP
+                0x000000000000cdb4      0x113 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000cdb4                ecx_eeprom_waitnotbusyFP
+ .text.ecx_readeepromFP
+                0x000000000000cec7      0x273 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000cec7                ecx_readeepromFP
+ .text.ecx_readeeprom1
+                0x000000000000d13a      0x15b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000d13a                ecx_readeeprom1
+ .text.ecx_readeeprom2
+                0x000000000000d295       0xee /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000d295                ecx_readeeprom2
+ .text.ecx_pushindex
+                0x000000000000d383       0xb3 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_pullindex
+                0x000000000000d436       0x56 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .text.ecx_send_processdata_group
+                0x000000000000d48c      0x950 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000d48c                ecx_send_processdata_group
+ .text.ecx_receive_processdata_group
+                0x000000000000dddc      0x3a3 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000dddc                ecx_receive_processdata_group
+ .text.ec_init  0x000000000000e17f       0x22 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000e17f                ec_init
+ .text.ec_close
+                0x000000000000e1a1       0x16 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000e1a1                ec_close
+ .text.ec_readstate
+                0x000000000000e1b7       0x15 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000e1b7                ec_readstate
+ .text.ec_writestate
+                0x000000000000e1cc       0x23 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000e1cc                ec_writestate
+ .text.ec_statecheck
+                0x000000000000e1ef       0x39 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000e1ef                ec_statecheck
+ .text.ec_send_processdata_group
+                0x000000000000e228       0x22 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000e228                ec_send_processdata_group
+ .text.ec_receive_processdata_group
+                0x000000000000e24a       0x2a /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000e24a                ec_receive_processdata_group
+ .text.ec_send_processdata
+                0x000000000000e274       0x13 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000e274                ec_send_processdata
+ .text.ec_receive_processdata
+                0x000000000000e287       0x1d /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x000000000000e287                ec_receive_processdata
+ .text.ecx_SoEerror
+                0x000000000000e2a4       0xb4 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+                0x000000000000e2a4                ecx_SoEerror
+ .text.ecx_SoEread
+                0x000000000000e358      0x467 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+                0x000000000000e358                ecx_SoEread
+ .text.ecx_readIDNmap
+                0x000000000000e7bf      0x32f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+                0x000000000000e7bf                ecx_readIDNmap
+ .text.ecx_writedatagramdata
+                0x000000000000eaee       0x89 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .text.ecx_setupdatagram
+                0x000000000000eb77      0x118 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000eb77                ecx_setupdatagram
+ .text.ecx_adddatagram
+                0x000000000000ec8f      0x1ae /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000ec8f                ecx_adddatagram
+ .text.ecx_BWR  0x000000000000ee3d       0xc8 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000ee3d                ecx_BWR
+ .text.ecx_BRD  0x000000000000ef05      0x101 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000ef05                ecx_BRD
+ .text.ecx_APRD
+                0x000000000000f006      0x101 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000f006                ecx_APRD
+ .text.ecx_APRDw
+                0x000000000000f107       0x7c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000f107                ecx_APRDw
+ .text.ecx_FPRD
+                0x000000000000f183      0x101 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000f183                ecx_FPRD
+ .text.ecx_FPRDw
+                0x000000000000f284       0x7c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000f284                ecx_FPRDw
+ .text.ecx_APWR
+                0x000000000000f300       0xc8 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000f300                ecx_APWR
+ .text.ecx_APWRw
+                0x000000000000f3c8       0x51 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000f3c8                ecx_APWRw
+ .text.ecx_FPWR
+                0x000000000000f419       0xc8 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000f419                ecx_FPWR
+ .text.ecx_FPWRw
+                0x000000000000f4e1       0x51 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                0x000000000000f4e1                ecx_FPWRw
+ *fill*         0x000000000000f532        0xe 
+ .text          0x000000000000f540       0x72 /usr/lib/x86_64-linux-gnu/libc_nonshared.a(elf-init.oS)
+                0x000000000000f540                __libc_csu_init
+                0x000000000000f5b0                __libc_csu_fini
+ .text.ecx_clear_rxbufstat
+                0x000000000000f5b2       0x39 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ecx_setupnic
+                0x000000000000f5eb      0x4fc /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                0x000000000000f5eb                ecx_setupnic
+ .text.ecx_closenic
+                0x000000000000fae7       0x68 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                0x000000000000fae7                ecx_closenic
+ .text.ec_setupheader
+                0x000000000000fb4f       0xba /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                0x000000000000fb4f                ec_setupheader
+ .text.ecx_getindex
+                0x000000000000fc09       0xf9 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                0x000000000000fc09                ecx_getindex
+ .text.ecx_setbufstat
+                0x000000000000fd02       0x5b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                0x000000000000fd02                ecx_setbufstat
+ .text.ecx_outframe
+                0x000000000000fd5d       0xa5 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                0x000000000000fd5d                ecx_outframe
+ .text.ecx_outframe_red
+                0x000000000000fe02      0x145 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                0x000000000000fe02                ecx_outframe_red
+ .text.ecx_recvpkt
+                0x000000000000ff47       0x82 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ecx_inframe
+                0x000000000000ffc9      0x2fd /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                0x000000000000ffc9                ecx_inframe
+ .text.ecx_waitinframe_red
+                0x00000000000102c6      0x361 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .text.ecx_waitinframe
+                0x0000000000010627       0x8b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                0x0000000000010627                ecx_waitinframe
+ .text.ecx_srconfirm
+                0x00000000000106b2       0xed /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                0x00000000000106b2                ecx_srconfirm
+ .text.osal_usleep
+                0x000000000001079f       0x84 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+                0x000000000001079f                osal_usleep
+ .text.osal_gettimeofday
+                0x0000000000010823       0x8a /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+                0x0000000000010823                osal_gettimeofday
+ .text.osal_current_time
+                0x00000000000108ad       0x57 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+                0x00000000000108ad                osal_current_time
+ .text.osal_timer_start
+                0x0000000000010904       0xf0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+                0x0000000000010904                osal_timer_start
+ .text.osal_timer_is_expired
+                0x00000000000109f4       0xa5 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+                0x00000000000109f4                osal_timer_is_expired
+ .text.osal_thread_create
+                0x0000000000010a99       0xa0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+                0x0000000000010a99                osal_thread_create
+ *(.gnu.warning)
+
+.fini           0x0000000000010b3c        0x9
+ *(SORT_NONE(.fini))
+ .fini          0x0000000000010b3c        0x4 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o
+                0x0000000000010b3c                _fini
+ .fini          0x0000000000010b40        0x5 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o
+                [!provide]                        PROVIDE (__etext = .)
+                [!provide]                        PROVIDE (_etext = .)
+                [!provide]                        PROVIDE (etext = .)
+
+.rodata         0x0000000000010b60      0xab4
+ *(.rodata .rodata.* .gnu.linkonce.r.*)
+ .rodata        0x0000000000010b60      0x305 obj/linux/ebox.o
+ *fill*         0x0000000000010e65       0x1b 
+ .rodata        0x0000000000010e80      0x6d2 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                0x0000000000010e80                ec_configlist
+ *fill*         0x0000000000011552        0x6 
+ .rodata        0x0000000000011558       0x8f /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ *fill*         0x00000000000115e7        0x1 
+ .rodata        0x00000000000115e8       0x2c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+
+.rodata1
+ *(.rodata1)
+
+.eh_frame_hdr   0x0000000000011614      0x3cc
+ *(.eh_frame_hdr)
+ .eh_frame_hdr  0x0000000000011614      0x3cc /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+                0x0000000000011614                __GNU_EH_FRAME_HDR
+ *(.eh_frame_entry .eh_frame_entry.*)
+
+.eh_frame       0x00000000000119e0      0xe18
+ *(.eh_frame)
+ .eh_frame      0x00000000000119e0       0x30 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+                                         0x2c (size before relaxing)
+ *fill*         0x0000000000011a10        0x0 
+ .eh_frame      0x0000000000011a10       0x40 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ .eh_frame      0x0000000000011a50       0x18 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+                                         0x30 (size before relaxing)
+ .eh_frame      0x0000000000011a68       0xe0 obj/linux/ebox.o
+                                         0xf8 (size before relaxing)
+ .eh_frame      0x0000000000011b48      0x130 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+                                        0x330 (size before relaxing)
+ .eh_frame      0x0000000000011c78      0x1d0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                                        0x268 (size before relaxing)
+ .eh_frame      0x0000000000011e48       0xb0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+                                        0x110 (size before relaxing)
+ .eh_frame      0x0000000000011ef8      0x4b0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                                        0x8c8 (size before relaxing)
+ .eh_frame      0x00000000000123a8       0x88 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+                                        0x110 (size before relaxing)
+ .eh_frame      0x0000000000012430      0x188 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                                        0x460 (size before relaxing)
+ .eh_frame      0x00000000000125b8       0x60 /usr/lib/x86_64-linux-gnu/libc_nonshared.a(elf-init.oS)
+                                         0x78 (size before relaxing)
+ .eh_frame      0x0000000000012618      0x148 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                                        0x238 (size before relaxing)
+ .eh_frame      0x0000000000012760        0x0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+                                         0x80 (size before relaxing)
+ .eh_frame      0x0000000000012760       0x94 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+                                        0x110 (size before relaxing)
+ .eh_frame      0x00000000000127f4        0x4 /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o
+ *(.eh_frame.*)
+
+.gcc_except_table
+ *(.gcc_except_table .gcc_except_table.*)
+
+.gnu_extab
+ *(.gnu_extab*)
+
+.exception_ranges
+ *(.exception_ranges .exception_ranges*)
+                0x0000000000212ca0                . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE))
+
+.eh_frame
+ *(.eh_frame)
+ *(.eh_frame.*)
+
+.gnu_extab
+ *(.gnu_extab)
+
+.gcc_except_table
+ *(.gcc_except_table .gcc_except_table.*)
+
+.exception_ranges
+ *(.exception_ranges .exception_ranges*)
+
+.tdata
+ *(.tdata .tdata.* .gnu.linkonce.td.*)
+
+.tbss
+ *(.tbss .tbss.* .gnu.linkonce.tb.*)
+ *(.tcommon)
+
+.preinit_array  0x0000000000212ca0        0x0
+                [!provide]                        PROVIDE (__preinit_array_start = .)
+ *(.preinit_array)
+                [!provide]                        PROVIDE (__preinit_array_end = .)
+
+.init_array     0x0000000000212ca0        0x8
+                0x0000000000212ca0                PROVIDE (__init_array_start = .)
+ *(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*))
+ *(.init_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .ctors)
+ .init_array    0x0000000000212ca0        0x8 /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o
+                0x0000000000212ca8                PROVIDE (__init_array_end = .)
+
+.fini_array     0x0000000000212ca8        0x8
+                [!provide]                        PROVIDE (__fini_array_start = .)
+ *(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*))
+ *(.fini_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .dtors)
+ .fini_array    0x0000000000212ca8        0x8 /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o
+                [!provide]                        PROVIDE (__fini_array_end = .)
+
+.ctors
+ *crtbegin.o(.ctors)
+ *crtbegin?.o(.ctors)
+ *(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
+ *(SORT_BY_NAME(.ctors.*))
+ *(.ctors)
+
+.dtors
+ *crtbegin.o(.dtors)
+ *crtbegin?.o(.dtors)
+ *(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
+ *(SORT_BY_NAME(.dtors.*))
+ *(.dtors)
+
+.jcr
+ *(.jcr)
+
+.data.rel.ro    0x0000000000212cb0        0x0
+ *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*)
+ *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*)
+ .data.rel.ro   0x0000000000212cb0        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+
+.dynamic        0x0000000000212cb0      0x200
+ *(.dynamic)
+ .dynamic       0x0000000000212cb0      0x200 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+                0x0000000000212cb0                _DYNAMIC
+
+.got            0x0000000000212eb0      0x150
+ *(.got.plt)
+ .got.plt       0x0000000000212eb0      0x128 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+                0x0000000000212eb0                _GLOBAL_OFFSET_TABLE_
+ *(.igot.plt)
+ *(.got)
+ .got           0x0000000000212fd8       0x28 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ *(.igot)
+                0x0000000000213000                . = DATA_SEGMENT_RELRO_END (., 0x0)
+
+.data           0x0000000000213000       0xc0
+ *(.data .data.* .gnu.linkonce.d.*)
+ .data.rel.local
+                0x0000000000213000        0x8 /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o
+                0x0000000000213000                __dso_handle
+ *fill*         0x0000000000213008       0x18 
+ .data.rel.local
+                0x0000000000213020       0xa0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x0000000000213020                ecx_context
+
+.tm_clone_table
+                0x00000000002130c0        0x0
+ .tm_clone_table
+                0x00000000002130c0        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o
+ .tm_clone_table
+                0x00000000002130c0        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o
+
+.data1
+ *(.data1)
+                0x00000000002130c0                _edata = .
+                [!provide]                        PROVIDE (edata = .)
+                0x00000000002130c0                . = .
+                0x00000000002130c0                __bss_start = .
+
+.bss            0x00000000002130c0    0xe9b80
+ *(.dynbss)
+ .dynbss        0x00000000002130c0        0x0 /usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/Scrt1.o
+ *(.bss .bss.* .gnu.linkonce.b.*)
+ .bss           0x00000000002130c0        0x1 /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o
+ *fill*         0x00000000002130c1       0x1f 
+ .bss           0x00000000002130e0       0x90 obj/linux/ebox.o
+                0x00000000002130e0                dorun
+                0x00000000002130e4                tmax
+                0x0000000000213100                cond
+                0x0000000000213140                mutex
+                0x0000000000213168                integral
+ *fill*         0x0000000000213170       0x10 
+ .bss           0x0000000000213180     0x2060 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x0000000000213180                EcatError
+ *(COMMON)
+ COMMON         0x00000000002151e0    0xc45c0 obj/linux/ebox.o
+                0x00000000002151e0                IOmap
+                0x00000000002161e0                ob3
+                0x00000000002161e4                os
+                0x00000000002161f0                t1
+                0x0000000000216200                thread1
+                0x0000000000216208                ainc
+                0x0000000000216220                stream1
+                0x0000000000277ca0                ain
+                0x0000000000277cb0                ob2
+                0x0000000000277cb4                ob
+                0x0000000000277cc0                t2
+                0x0000000000277cd0                cyclecount
+                0x0000000000277cd8                in_EBOX
+                0x0000000000277ce0                tv
+                0x0000000000277d00                stream2
+                0x00000000002d9780                schedp
+                0x00000000002d9784                DCdiff
+                0x00000000002d9788                toff
+                0x00000000002d9790                deltat
+                0x00000000002d9794                streampos
+                0x00000000002d9798                out_EBOX
+ COMMON         0x00000000002d97a0      0x100 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                0x00000000002d97a0                ecx_mapt
+                0x00000000002d9860                ecx_threadh
+ COMMON         0x00000000002d98a0    0x233a0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                0x00000000002d98a0                ecx_port
+                0x00000000002e63e0                ecx_redport
+                0x00000000002ec970                ec_DCtime
+                0x00000000002ec978                ec_slavecount
+                0x00000000002ec980                ec_group
+                0x00000000002ecc00                ec_slave
+                0x00000000002fcc40                . = ALIGN ((. != 0x0)?0x8:0x1)
+
+.lbss
+ *(.dynlbss)
+ *(.lbss .lbss.* .gnu.linkonce.lb.*)
+ *(LARGE_COMMON)
+                0x00000000002fcc40                . = ALIGN (0x8)
+                0x00000000002fcc40                . = SEGMENT_START ("ldata-segment", .)
+
+.lrodata
+ *(.lrodata .lrodata.* .gnu.linkonce.lr.*)
+
+.ldata          0x00000000006fcc40        0x0
+ *(.ldata .ldata.* .gnu.linkonce.l.*)
+                0x00000000006fcc40                . = ALIGN ((. != 0x0)?0x8:0x1)
+                0x00000000006fcc40                . = ALIGN (0x8)
+                0x00000000006fcc40                _end = .
+                [!provide]                        PROVIDE (end = .)
+                0x00000000006fcc40                . = DATA_SEGMENT_END (.)
+
+.stab
+ *(.stab)
+
+.stabstr
+ *(.stabstr)
+
+.stab.excl
+ *(.stab.excl)
+
+.stab.exclstr
+ *(.stab.exclstr)
+
+.stab.index
+ *(.stab.index)
+
+.stab.indexstr
+ *(.stab.indexstr)
+
+.comment        0x0000000000000000       0x24
+ *(.comment)
+ .comment       0x0000000000000000       0x24 /usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o
+                                         0x25 (size before relaxing)
+ .comment       0x0000000000000024       0x25 obj/linux/ebox.o
+ .comment       0x0000000000000024       0x25 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .comment       0x0000000000000024       0x25 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .comment       0x0000000000000024       0x25 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .comment       0x0000000000000024       0x25 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .comment       0x0000000000000024       0x25 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .comment       0x0000000000000024       0x25 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .comment       0x0000000000000024       0x25 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .comment       0x0000000000000024       0x25 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .comment       0x0000000000000024       0x25 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+ .comment       0x0000000000000024       0x25 /usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o
+
+.debug
+ *(.debug)
+
+.line
+ *(.line)
+
+.debug_srcinfo
+ *(.debug_srcinfo)
+
+.debug_sfnames
+ *(.debug_sfnames)
+
+.debug_aranges  0x0000000000000000      0xf90
+ *(.debug_aranges)
+ .debug_aranges
+                0x0000000000000000       0x80 obj/linux/ebox.o
+ .debug_aranges
+                0x0000000000000080      0x1d0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .debug_aranges
+                0x0000000000000250      0x190 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .debug_aranges
+                0x00000000000003e0       0xc0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .debug_aranges
+                0x00000000000004a0      0x550 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .debug_aranges
+                0x00000000000009f0       0x90 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .debug_aranges
+                0x0000000000000a80      0x270 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .debug_aranges
+                0x0000000000000cf0      0x180 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .debug_aranges
+                0x0000000000000e70       0x60 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .debug_aranges
+                0x0000000000000ed0       0xc0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+
+.debug_pubnames
+ *(.debug_pubnames)
+
+.debug_info     0x0000000000000000    0x12fa4
+ *(.debug_info .gnu.linkonce.wi.*)
+ .debug_info    0x0000000000000000     0x1a01 obj/linux/ebox.o
+ .debug_info    0x0000000000001a01     0x2718 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .debug_info    0x0000000000004119     0x2054 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .debug_info    0x000000000000616d     0x1708 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .debug_info    0x0000000000007875     0x3b0b /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .debug_info    0x000000000000b380     0x1a32 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .debug_info    0x000000000000cdb2     0x279c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .debug_info    0x000000000000f54e     0x1f54 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .debug_info    0x00000000000114a2     0x14b6 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .debug_info    0x0000000000012958      0x64c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+
+.debug_abbrev   0x0000000000000000     0x1c1e
+ *(.debug_abbrev)
+ .debug_abbrev  0x0000000000000000      0x319 obj/linux/ebox.o
+ .debug_abbrev  0x0000000000000319      0x2c5 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .debug_abbrev  0x00000000000005de      0x33e /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .debug_abbrev  0x000000000000091c      0x2ff /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .debug_abbrev  0x0000000000000c1b      0x39e /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .debug_abbrev  0x0000000000000fb9      0x2a8 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .debug_abbrev  0x0000000000001261      0x2a5 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .debug_abbrev  0x0000000000001506      0x350 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .debug_abbrev  0x0000000000001856      0x24a /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .debug_abbrev  0x0000000000001aa0      0x17e /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+
+.debug_line     0x0000000000000000     0x48d0
+ *(.debug_line .debug_line.* .debug_line_end)
+ .debug_line    0x0000000000000000      0x56f obj/linux/ebox.o
+ .debug_line    0x000000000000056f      0x980 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .debug_line    0x0000000000000eef      0xc98 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .debug_line    0x0000000000001b87      0x4b9 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .debug_line    0x0000000000002040     0x10db /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .debug_line    0x000000000000311b      0x477 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .debug_line    0x0000000000003592      0x6bd /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .debug_line    0x0000000000003c4f      0x6b7 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .debug_line    0x0000000000004306      0x2aa /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .debug_line    0x00000000000045b0      0x320 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+
+.debug_frame
+ *(.debug_frame)
+
+.debug_str      0x0000000000000000     0x2dd4
+ *(.debug_str)
+ .debug_str     0x0000000000000000      0xd32 obj/linux/ebox.o
+                                        0xef2 (size before relaxing)
+ .debug_str     0x0000000000000d32      0x5a4 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+                                       0x1157 (size before relaxing)
+ .debug_str     0x00000000000012d6      0x6fe /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+                                       0x1381 (size before relaxing)
+ .debug_str     0x00000000000019d4      0x12c /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+                                        0xe8e (size before relaxing)
+ .debug_str     0x0000000000001b00      0x85a /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+                                       0x18b2 (size before relaxing)
+ .debug_str     0x000000000000235a      0x1e0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+                                        0xeb0 (size before relaxing)
+ .debug_str     0x000000000000253a      0x1ca /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+                                       0x120a (size before relaxing)
+ .debug_str     0x0000000000002704      0x4d0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+                                       0x119b (size before relaxing)
+ .debug_str     0x0000000000002bd4       0x93 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+                                        0xcee (size before relaxing)
+ .debug_str     0x0000000000002c67      0x16d /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+                                        0x43c (size before relaxing)
+
+.debug_loc
+ *(.debug_loc)
+
+.debug_macinfo
+ *(.debug_macinfo)
+
+.debug_weaknames
+ *(.debug_weaknames)
+
+.debug_funcnames
+ *(.debug_funcnames)
+
+.debug_typenames
+ *(.debug_typenames)
+
+.debug_varnames
+ *(.debug_varnames)
+
+.debug_pubtypes
+ *(.debug_pubtypes)
+
+.debug_ranges   0x0000000000000000      0xef0
+ *(.debug_ranges)
+ .debug_ranges  0x0000000000000000       0x70 obj/linux/ebox.o
+ .debug_ranges  0x0000000000000070      0x1c0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatcoe.o)
+ .debug_ranges  0x0000000000000230      0x180 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatconfig.o)
+ .debug_ranges  0x00000000000003b0       0xb0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatdc.o)
+ .debug_ranges  0x0000000000000460      0x540 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatmain.o)
+ .debug_ranges  0x00000000000009a0       0x80 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatsoe.o)
+ .debug_ranges  0x0000000000000a20      0x260 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libsoem.a(ethercatbase.o)
+ .debug_ranges  0x0000000000000c80      0x170 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(nicdrv.o)
+ .debug_ranges  0x0000000000000df0       0x50 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/liboshw.a(oshw.o)
+ .debug_ranges  0x0000000000000e40       0xb0 /mnt/storageDevice/projects/learning_ethercat/new_SOEM/SOEM-1.3.1/lib/linux/libosal.a(osal.o)
+
+.debug_macro
+ *(.debug_macro)
+
+.debug_addr
+ *(.debug_addr)
+
+.gnu.attributes
+ *(.gnu.attributes)
+
+/DISCARD/
+ *(.note.GNU-stack)
+ *(.gnu_debuglink)
+ *(.gnu.lto_*)
+OUTPUT(ebox elf64-x86-64)

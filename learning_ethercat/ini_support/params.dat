@@ -1,0 +1,9 @@
+
+
+
+mode_of_oper = 8
+eth_interface = eth0
+number_of_cycles = 12000
+
+
+

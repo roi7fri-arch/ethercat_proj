@@ -1,0 +1,17 @@
+
+
+
+alef = 9
+beit    = 10
+
+
+integer = 9
+double    = 10.52
+float = 0.2365874125
+long = 12345678921548
+string = mystring
+short = 12345
+hexval = 0x23894576
+
+
+

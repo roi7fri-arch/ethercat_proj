@@ -1,0 +1,5 @@
+source setup.sh linux
+
+make all ARCH=aarch64 GCC_PATH=/media/bsp/13313ca3-5e12-437a-858a-ab8400dd8066/c45_ethernet/buildroot-2019.02.9/output/host/usr CROSS_GCC=aarch64-buildroot-linux-gnu
+
+make all ARCH=arm GCC_PATH=/media/bsp/13313ca3-5e12-437a-858a-ab8400dd8066/learning_ethercat/cyclone5/buildroot-2018.02/output/host/usr CROSS_GCC=arm-buildroot-linux-gnueabihf
