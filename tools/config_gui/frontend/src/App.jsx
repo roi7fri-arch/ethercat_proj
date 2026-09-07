@@ -28,6 +28,20 @@ export default function App() {
 
   const slave = config && config.slaves[selected];
 
+  const profiles = (meta && meta.profiles) || [];
+  const mapDefaults = (meta && meta.map_defaults) || {
+    rxpdo_map_base: "0x1600", txpdo_map_base: "0x1A00",
+    sm2_assign: "0x1C12", sm3_assign: "0x1C13", map_entries_per_obj: 8,
+  };
+  const profileById = (id) => profiles.find((p) => p.id === id);
+  const activeProfile = slave ? profileById(slave.profile) : null;
+  const activeOD =
+    (activeProfile && activeProfile.object_dictionary) ||
+    (meta && meta.object_dictionary);
+  const activeTemplates =
+    (activeProfile && activeProfile.mode_templates) ||
+    (meta && meta.mode_templates);
+
   function flash(kind, msg) {
     setToast({ kind, msg });
     setTimeout(() => setToast(null), 3500);
@@ -43,13 +57,52 @@ export default function App() {
     setConfig({ ...config, slaves });
   }
 
-  function addSlave() {
-    const slaves = config.slaves.concat({
-      name: "Elmo Platinum",
+  function changeProfile(id) {
+    const p = profileById(id);
+    const patch = { profile: id };
+    // Fill in the vendor id from the profile only when the user hasn't set one.
+    if (p && p.default_vendor_id && !slave.expected_vendor_id) {
+      patch.expected_vendor_id = p.default_vendor_id;
+    }
+    updateSlave(patch);
+  }
+
+  function newSlaveDefaults(name) {
+    return {
+      name: name || "Drive",
+      profile: (meta && meta.default_profile) || "elmo_platinum",
       mode_of_operation: 8,
+      rxpdo_map_base: mapDefaults.rxpdo_map_base,
+      txpdo_map_base: mapDefaults.txpdo_map_base,
+      sm2_assign: mapDefaults.sm2_assign,
+      sm3_assign: mapDefaults.sm3_assign,
+      map_entries_per_obj: mapDefaults.map_entries_per_obj,
+      startup_sdo: [],
       rxpdo: clone(meta.mode_templates["8"].rx),
       txpdo: clone(meta.mode_templates["8"].tx),
+    };
+  }
+
+  function addStartupSdo() {
+    const list = (slave.startup_sdo || []).concat({
+      index: "0x0000", subindex: 0, size: 4, value: "0x00000000", comment: "",
     });
+    updateSlave({ startup_sdo: list });
+  }
+
+  function updateStartupSdo(i, patch) {
+    const list = (slave.startup_sdo || []).slice();
+    list[i] = { ...list[i], ...patch };
+    updateSlave({ startup_sdo: list });
+  }
+
+  function removeStartupSdo(i) {
+    const list = (slave.startup_sdo || []).filter((_, k) => k !== i);
+    updateSlave({ startup_sdo: list });
+  }
+
+  function addSlave() {
+    const slaves = config.slaves.concat(newSlaveDefaults("Drive"));
     setConfig({ ...config, slaves });
     setSelected(slaves.length - 1);
   }
@@ -69,7 +122,7 @@ export default function App() {
   }
 
   function loadTemplate() {
-    const tmpl = meta.mode_templates[String(slave.mode_of_operation)];
+    const tmpl = activeTemplates[String(slave.mode_of_operation)];
     if (!tmpl) {
       flash("error", "No template for " + modeLabel(meta.modes, slave.mode_of_operation));
       return;
@@ -181,6 +234,11 @@ export default function App() {
             <input type="number" value={config.network.auto_recovery_timeout_us}
               onChange={(e) => updateNetwork("auto_recovery_timeout_us", Number(e.target.value))} />
           </label>
+          <label className="check">
+            <input type="checkbox" checked={config.network.verify_identity !== false}
+              onChange={(e) => updateNetwork("verify_identity", e.target.checked)} />
+            Verify slave identity at start-up
+          </label>
         </div>
       </section>
 
@@ -218,6 +276,16 @@ export default function App() {
                   <input value={slave.name}
                     onChange={(e) => updateSlave({ name: e.target.value })} />
                 </label>
+                {profiles.length > 0 && (
+                  <label title="Drive family. Selects the object picklist and mode templates. The drive's own SII still drives per-slave SM sizing at run-time.">Drive profile
+                    <select value={slave.profile || (meta.default_profile || "")}
+                      onChange={(e) => changeProfile(e.target.value)}>
+                      {profiles.map((p) => (
+                        <option key={p.id} value={p.id}>{p.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <label>Mode of operation
                   <select value={slave.mode_of_operation}
                     onChange={(e) => updateSlave({ mode_of_operation: Number(e.target.value) })}>
@@ -241,19 +309,85 @@ export default function App() {
                 </label>
               </div>
 
+              <details className="card advanced">
+                <summary>Advanced: PDO-mapping objects &amp; startup SDOs</summary>
+                <div className="grid">
+                  <label title="First RxPDO mapping object (CiA402 default 0x1600).">RxPDO map base
+                    <input value={slave.rxpdo_map_base || mapDefaults.rxpdo_map_base}
+                      onChange={(e) => updateSlave({ rxpdo_map_base: e.target.value })} />
+                  </label>
+                  <label title="First TxPDO mapping object (CiA402 default 0x1A00).">TxPDO map base
+                    <input value={slave.txpdo_map_base || mapDefaults.txpdo_map_base}
+                      onChange={(e) => updateSlave({ txpdo_map_base: e.target.value })} />
+                  </label>
+                  <label title="SyncManager 2 PDO assignment object (default 0x1C12).">SM2 assign
+                    <input value={slave.sm2_assign || mapDefaults.sm2_assign}
+                      onChange={(e) => updateSlave({ sm2_assign: e.target.value })} />
+                  </label>
+                  <label title="SyncManager 3 PDO assignment object (default 0x1C13).">SM3 assign
+                    <input value={slave.sm3_assign || mapDefaults.sm3_assign}
+                      onChange={(e) => updateSlave({ sm3_assign: e.target.value })} />
+                  </label>
+                  <label title="Max PDO entries packed into each mapping object before spilling to the next.">Entries / map object
+                    <input type="number" min="1" max="64"
+                      value={slave.map_entries_per_obj || mapDefaults.map_entries_per_obj}
+                      onChange={(e) => updateSlave({ map_entries_per_obj: Number(e.target.value) })} />
+                  </label>
+                </div>
+
+                <div className="sdo-head">
+                  <h4>Startup SDO writes</h4>
+                  <span className="muted">applied in order during PreOP→SafeOP, before PDO mapping</span>
+                </div>
+                <table className="sdo-table">
+                  <thead>
+                    <tr>
+                      <th>Index</th><th>Sub</th><th>Size</th><th>Value</th><th>Comment</th><th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(slave.startup_sdo || []).map((c, i) => (
+                      <tr key={i}>
+                        <td><input value={c.index}
+                          onChange={(e) => updateStartupSdo(i, { index: e.target.value })} /></td>
+                        <td><input type="number" min="0" max="255" value={c.subindex}
+                          onChange={(e) => updateStartupSdo(i, { subindex: Number(e.target.value) })} /></td>
+                        <td>
+                          <select value={c.size}
+                            onChange={(e) => updateStartupSdo(i, { size: Number(e.target.value) })}>
+                            <option value={1}>1</option>
+                            <option value={2}>2</option>
+                            <option value={4}>4</option>
+                          </select>
+                        </td>
+                        <td><input value={c.value}
+                          onChange={(e) => updateStartupSdo(i, { value: e.target.value })} /></td>
+                        <td><input value={c.comment || ""}
+                          onChange={(e) => updateStartupSdo(i, { comment: e.target.value })} /></td>
+                        <td><button className="danger icon" onClick={() => removeStartupSdo(i)}>✕</button></td>
+                      </tr>
+                    ))}
+                    {(slave.startup_sdo || []).length === 0 && (
+                      <tr><td colSpan={6} className="muted">none — the drive uses its stored defaults</td></tr>
+                    )}
+                  </tbody>
+                </table>
+                <button onClick={addStartupSdo}>+ Add startup SDO</button>
+              </details>
+
               <div className="maps">
                 <PdoTable
                   title="RxPDO"
                   subtitle="master → slave (command)"
                   entries={slave.rxpdo}
-                  presets={meta.object_dictionary.rx}
+                  presets={activeOD.rx}
                   onChange={(rxpdo) => updateSlave({ rxpdo })}
                 />
                 <PdoTable
                   title="TxPDO"
                   subtitle="slave → master (feedback)"
                   entries={slave.txpdo}
-                  presets={meta.object_dictionary.tx}
+                  presets={activeOD.tx}
                   onChange={(txpdo) => updateSlave({ txpdo })}
                 />
               </div>

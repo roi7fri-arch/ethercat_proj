@@ -58,17 +58,62 @@ class Network(BaseModel):
     sync_ki_div: int = Field(default=20, gt=0)
     auto_recovery: bool = True
     auto_recovery_timeout_us: int = Field(default=500, gt=0)
+    verify_identity: bool = True
+
+
+def _norm_index16(v):
+    value = int(str(v).strip(), 16)
+    if not 0 <= value <= 0xFFFF:
+        raise ValueError("index out of range 0x0000-0xFFFF")
+    return "0x%04X" % value
+
+
+class SdoCmd(BaseModel):
+    index: str
+    subindex: int = Field(default=0, ge=0, le=255)
+    size: int = Field(default=4)
+    value: str = "0x00000000"
+    comment: str = ""
+
+    @field_validator("index")
+    @classmethod
+    def normalize_index(cls, v):
+        return _norm_index16(v)
+
+    @field_validator("size")
+    @classmethod
+    def check_size(cls, v):
+        if v not in (1, 2, 4):
+            raise ValueError("startup SDO size must be 1, 2 or 4 bytes")
+        return v
+
+    @field_validator("value")
+    @classmethod
+    def normalize_value(cls, v):
+        return "0x%08X" % (int(str(v).strip(), 0) & 0xFFFFFFFF)
 
 
 class Slave(BaseModel):
     position: Optional[int] = None
     name: str = ""
+    profile: str = meta.DEFAULT_PROFILE
     mode_of_operation: int
     expected_vendor_id: Optional[str] = None
     expected_product_code: Optional[str] = None
     expected_revision: Optional[str] = None
+    rxpdo_map_base: str = meta.MAP_DEFAULTS["rxpdo_map_base"]
+    txpdo_map_base: str = meta.MAP_DEFAULTS["txpdo_map_base"]
+    sm2_assign: str = meta.MAP_DEFAULTS["sm2_assign"]
+    sm3_assign: str = meta.MAP_DEFAULTS["sm3_assign"]
+    map_entries_per_obj: int = Field(default=meta.MAP_DEFAULTS["map_entries_per_obj"], gt=0, le=64)
+    startup_sdo: List[SdoCmd] = []
     rxpdo: List[PdoEntry] = []
     txpdo: List[PdoEntry] = []
+
+    @field_validator("rxpdo_map_base", "txpdo_map_base", "sm2_assign", "sm3_assign")
+    @classmethod
+    def normalize_map_index(cls, v):
+        return _norm_index16(v)
 
     @field_validator("expected_vendor_id", "expected_product_code", "expected_revision")
     @classmethod
@@ -105,6 +150,9 @@ def get_meta():
         "modes": meta.MODES,
         "object_dictionary": meta.OBJECT_DICTIONARY,
         "mode_templates": {str(k): v for k, v in meta.MODE_TEMPLATES.items()},
+        "profiles": meta.PROFILES,
+        "default_profile": meta.DEFAULT_PROFILE,
+        "map_defaults": meta.MAP_DEFAULTS,
         "default_config": meta.default_config(),
     }
 

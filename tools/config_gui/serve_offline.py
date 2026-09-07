@@ -165,6 +165,43 @@ def _embedded_meta():
         },
     }
 
+    def _is_standard_index(index_str):
+        idx = int(index_str, 16)
+        return (0x1000 <= idx <= 0x1FFF) or (0x6000 <= idx <= 0x9FFF)
+
+    def _std_only(entries):
+        return [dict(e) for e in entries if _is_standard_index(e["index"])]
+
+    _STD_OBJECTS = {"rx": _std_only(OBJECT_DICTIONARY["rx"]),
+                    "tx": _std_only(OBJECT_DICTIONARY["tx"])}
+    _STD_TEMPLATES = {
+        m: {"rx": _std_only(t["rx"]), "tx": _std_only(t["tx"])}
+        for m, t in MODE_TEMPLATES.items()
+    }
+
+    DEFAULT_PROFILE = "elmo_platinum"
+    PROFILES = [
+        {"id": "elmo_platinum", "label": "Elmo Platinum",
+         "default_vendor_id": "0x0000009A",
+         "object_dictionary": OBJECT_DICTIONARY, "mode_templates": MODE_TEMPLATES},
+        {"id": "elmo_gold", "label": "Elmo Gold",
+         "default_vendor_id": "0x0000009A",
+         "object_dictionary": OBJECT_DICTIONARY, "mode_templates": MODE_TEMPLATES},
+        {"id": "acs", "label": "ACS Motion Control",
+         "default_vendor_id": "",
+         "object_dictionary": _STD_OBJECTS, "mode_templates": _STD_TEMPLATES},
+        {"id": "generic_cia402", "label": "Generic CiA402",
+         "default_vendor_id": "",
+         "object_dictionary": _STD_OBJECTS, "mode_templates": _STD_TEMPLATES},
+    ]
+    MAP_DEFAULTS = {
+        "rxpdo_map_base": "0x1600",
+        "txpdo_map_base": "0x1A00",
+        "sm2_assign": "0x1C12",
+        "sm3_assign": "0x1C13",
+        "map_entries_per_obj": 8,
+    }
+
     def default_config():
         return {
             "version": CONFIG_VERSION,
@@ -179,12 +216,20 @@ def _embedded_meta():
                 "sync_ki_div": 20,
                 "auto_recovery": True,
                 "auto_recovery_timeout_us": 500,
+                "verify_identity": True,
             },
             "slaves": [
                 {
                     "position": 1,
                     "name": "Elmo Platinum",
+                    "profile": DEFAULT_PROFILE,
                     "mode_of_operation": 8,
+                    "rxpdo_map_base": MAP_DEFAULTS["rxpdo_map_base"],
+                    "txpdo_map_base": MAP_DEFAULTS["txpdo_map_base"],
+                    "sm2_assign": MAP_DEFAULTS["sm2_assign"],
+                    "sm3_assign": MAP_DEFAULTS["sm3_assign"],
+                    "map_entries_per_obj": MAP_DEFAULTS["map_entries_per_obj"],
+                    "startup_sdo": [],
                     "rxpdo": list(MODE_TEMPLATES[8]["rx"]),
                     "txpdo": list(MODE_TEMPLATES[8]["tx"]),
                 }
@@ -196,6 +241,9 @@ def _embedded_meta():
         MODES=MODES,
         OBJECT_DICTIONARY=OBJECT_DICTIONARY,
         MODE_TEMPLATES=MODE_TEMPLATES,
+        PROFILES=PROFILES,
+        DEFAULT_PROFILE=DEFAULT_PROFILE,
+        MAP_DEFAULTS=MAP_DEFAULTS,
         default_config=default_config,
     )
 
@@ -280,6 +328,29 @@ def _norm_pdo(e):
     }
 
 
+def _norm_value32(v):
+    try:
+        value = int(str(v).strip(), 0)
+    except (TypeError, ValueError):
+        raise ApiError(422, "invalid startup SDO value: %r" % v)
+    return "0x%08X" % (value & 0xFFFFFFFF)
+
+
+def _norm_sdo(e):
+    if not isinstance(e, dict):
+        raise ApiError(422, "startup SDO must be an object")
+    size = _require_int(e, "size", default=4)
+    if size not in (1, 2, 4):
+        raise ApiError(422, "startup SDO size must be 1, 2 or 4 bytes")
+    return {
+        "index": _norm_index(e.get("index")),
+        "subindex": _require_int(e, "subindex", default=0, minv=0, maxv=255),
+        "size": size,
+        "value": _norm_value32(e.get("value", 0)),
+        "comment": str(e.get("comment", "") or ""),
+    }
+
+
 def _norm_network(n):
     if not isinstance(n, dict):
         raise ApiError(422, "network must be an object")
@@ -294,6 +365,7 @@ def _norm_network(n):
         "sync_ki_div": _require_int(n, "sync_ki_div", default=20, minv=0, exclusive_min=True),
         "auto_recovery": bool(n.get("auto_recovery", True)),
         "auto_recovery_timeout_us": _require_int(n, "auto_recovery_timeout_us", default=500, minv=0, exclusive_min=True),
+        "verify_identity": bool(n.get("verify_identity", True)),
     }
 
 
@@ -310,10 +382,17 @@ def _norm_config(raw):
         slaves.append({
             "position": i + 1,  # renumbered
             "name": str(s.get("name", "") or ""),
+            "profile": str(s.get("profile", getattr(meta, "DEFAULT_PROFILE", "elmo_platinum")) or "elmo_platinum"),
             "mode_of_operation": _require_int(s, "mode_of_operation"),
             "expected_vendor_id": _norm_identity(s.get("expected_vendor_id")),
             "expected_product_code": _norm_identity(s.get("expected_product_code")),
             "expected_revision": _norm_identity(s.get("expected_revision")),
+            "rxpdo_map_base": _norm_index(s.get("rxpdo_map_base", "0x1600")),
+            "txpdo_map_base": _norm_index(s.get("txpdo_map_base", "0x1A00")),
+            "sm2_assign": _norm_index(s.get("sm2_assign", "0x1C12")),
+            "sm3_assign": _norm_index(s.get("sm3_assign", "0x1C13")),
+            "map_entries_per_obj": _require_int(s, "map_entries_per_obj", default=8, minv=0, maxv=64, exclusive_min=True),
+            "startup_sdo": [_norm_sdo(e) for e in s.get("startup_sdo", []) or []],
             "rxpdo": [_norm_pdo(e) for e in s.get("rxpdo", []) or []],
             "txpdo": [_norm_pdo(e) for e in s.get("txpdo", []) or []],
         })
@@ -358,6 +437,9 @@ class Handler(BaseHTTPRequestHandler):
                     "modes": meta.MODES,
                     "object_dictionary": meta.OBJECT_DICTIONARY,
                     "mode_templates": {str(k): v for k, v in meta.MODE_TEMPLATES.items()},
+                    "profiles": getattr(meta, "PROFILES", []),
+                    "default_profile": getattr(meta, "DEFAULT_PROFILE", "elmo_platinum"),
+                    "map_defaults": getattr(meta, "MAP_DEFAULTS", {}),
                     "default_config": meta.default_config(),
                 })
             if path == "/api/config/load":

@@ -77,6 +77,66 @@ static uint32_t parse_u32_opt(const cJSON *item)
     return 0;
 }
 
+/* Optional 16-bit CoE index ("0x1600", "1600" hex, or a JSON number).
+ * Absent/invalid -> def. */
+static uint16_t parse_index_opt(const cJSON *item, uint16_t def)
+{
+    if (cJSON_IsNumber(item))
+        return (uint16_t)item->valuedouble;
+    if (cJSON_IsString(item) && item->valuestring && item->valuestring[0])
+        return (uint16_t)strtoul(item->valuestring, NULL, 16);
+    return def;
+}
+
+/* Optional per-slave list of PRE-OP init SDO writes (vendor start-up params). */
+static int parse_startup_sdo(const cJSON *arr, ecat_slave_config_t *s)
+{
+    int n = 0;
+    const cJSON *item;
+
+    s->startup_sdo_count = 0;
+    if (arr == NULL)
+        return 0;
+    if (!cJSON_IsArray(arr))
+        return fail("'startup_sdo' must be an array");
+
+    cJSON_ArrayForEach(item, arr)
+    {
+        ecat_sdo_cmd_t *c;
+        const cJSON *jsub, *jsize, *jval, *jcomment;
+        long sub, size;
+
+        if (n >= ECAT_CFG_MAX_SDO_CMDS)
+            return fail("'startup_sdo' has more than %d entries", ECAT_CFG_MAX_SDO_CMDS);
+        c = &s->startup_sdo[n];
+
+        if (parse_index(cJSON_GetObjectItemCaseSensitive(item, "index"), &c->index) != 0)
+            return -1;
+
+        jsub     = cJSON_GetObjectItemCaseSensitive(item, "subindex");
+        jsize    = cJSON_GetObjectItemCaseSensitive(item, "size");
+        jval     = cJSON_GetObjectItemCaseSensitive(item, "value");
+        jcomment = cJSON_GetObjectItemCaseSensitive(item, "comment");
+
+        sub  = cJSON_IsNumber(jsub)  ? (long)jsub->valuedouble  : 0;
+        size = cJSON_IsNumber(jsize) ? (long)jsize->valuedouble : 4;
+        if (sub < 0 || sub > 255)
+            return fail("startup_sdo entry %d: subindex %ld out of range 0-255", n, sub);
+        if (size != 1 && size != 2 && size != 4)
+            return fail("startup_sdo entry %d (0x%04X): size %ld must be 1, 2 or 4",
+                        n, c->index, size);
+
+        c->subindex = (uint8_t)sub;
+        c->size     = (uint8_t)size;
+        c->value    = parse_u32_opt(jval);
+        copy_str(c->comment, sizeof(c->comment),
+                 cJSON_IsString(jcomment) ? jcomment->valuestring : "");
+        n++;
+    }
+    s->startup_sdo_count = n;
+    return 0;
+}
+
 static int parse_pdo_list(const cJSON *arr, const char *which,
                           ecat_pdo_entry_t *out, int *out_count)
 {
@@ -175,6 +235,10 @@ static int parse_network(const cJSON *net, ecat_network_config_t *out)
     if (out->auto_recovery_timeout_us <= 0)
         out->auto_recovery_timeout_us = 500;
 
+    /* Slave identity verification against config: optional, on by default. */
+    j = cJSON_GetObjectItemCaseSensitive(net, "verify_identity");
+    out->verify_identity = cJSON_IsBool(j) ? cJSON_IsTrue(j) : 1;
+
     return 0;
 }
 
@@ -226,6 +290,9 @@ int ecat_config_load_string(const char *json, ecat_config_t *cfg)
         j = cJSON_GetObjectItemCaseSensitive(jslave, "name");
         copy_str(s->name, sizeof(s->name), cJSON_IsString(j) ? j->valuestring : "");
 
+        j = cJSON_GetObjectItemCaseSensitive(jslave, "profile");
+        copy_str(s->profile, sizeof(s->profile), cJSON_IsString(j) ? j->valuestring : "");
+
         j = cJSON_GetObjectItemCaseSensitive(jslave, "mode_of_operation");
         if (!cJSON_IsNumber(j))
         {
@@ -242,10 +309,31 @@ int ecat_config_load_string(const char *json, ecat_config_t *cfg)
         s->expected_revision =
             parse_u32_opt(cJSON_GetObjectItemCaseSensitive(jslave, "expected_revision"));
 
+        /* Optional PDO mapping / SM-assign object overrides (defaults are the
+         * standard CiA402 ones; a differing family can change them as data). */
+        s->rxpdo_map_base = parse_index_opt(
+            cJSON_GetObjectItemCaseSensitive(jslave, "rxpdo_map_base"), ECAT_CFG_DEF_RXMAP_BASE);
+        s->txpdo_map_base = parse_index_opt(
+            cJSON_GetObjectItemCaseSensitive(jslave, "txpdo_map_base"), ECAT_CFG_DEF_TXMAP_BASE);
+        s->sm2_assign = parse_index_opt(
+            cJSON_GetObjectItemCaseSensitive(jslave, "sm2_assign"), ECAT_CFG_DEF_SM2_ASSIGN);
+        s->sm3_assign = parse_index_opt(
+            cJSON_GetObjectItemCaseSensitive(jslave, "sm3_assign"), ECAT_CFG_DEF_SM3_ASSIGN);
+        j = cJSON_GetObjectItemCaseSensitive(jslave, "map_entries_per_obj");
+        s->map_entries_per_obj = cJSON_IsNumber(j) ? (int)j->valuedouble : ECAT_CFG_DEF_MAP_PER_OBJ;
+        if (s->map_entries_per_obj <= 0)
+            s->map_entries_per_obj = ECAT_CFG_DEF_MAP_PER_OBJ;
+
         if (parse_pdo_list(cJSON_GetObjectItemCaseSensitive(jslave, "rxpdo"),
                            "rxpdo", s->rxpdo, &s->rxpdo_count) != 0 ||
             parse_pdo_list(cJSON_GetObjectItemCaseSensitive(jslave, "txpdo"),
                            "txpdo", s->txpdo, &s->txpdo_count) != 0)
+        {
+            cJSON_Delete(root);
+            return -1;
+        }
+
+        if (parse_startup_sdo(cJSON_GetObjectItemCaseSensitive(jslave, "startup_sdo"), s) != 0)
         {
             cJSON_Delete(root);
             return -1;
@@ -312,6 +400,7 @@ void ecat_config_print(const ecat_config_t *cfg)
     printf("  auto_recovery    : %s (timeout %d us)\n",
            cfg->network.auto_recovery ? "on" : "off",
            cfg->network.auto_recovery_timeout_us);
+    printf("  verify_identity  : %s\n", cfg->network.verify_identity ? "on" : "off");
     printf("  sync_kp_div      : %d\n", cfg->network.sync_kp_div);
     printf("  sync_ki_div      : %d\n", cfg->network.sync_ki_div);
     for (i = 0; i < cfg->slave_count; i++)
@@ -322,6 +411,18 @@ void ecat_config_print(const ecat_config_t *cfg)
         if (s->expected_vendor_id || s->expected_product_code || s->expected_revision)
             printf("    expect id: vendor 0x%08X product 0x%08X rev 0x%08X\n",
                    s->expected_vendor_id, s->expected_product_code, s->expected_revision);
+        if (s->rxpdo_map_base != ECAT_CFG_DEF_RXMAP_BASE ||
+            s->txpdo_map_base != ECAT_CFG_DEF_TXMAP_BASE ||
+            s->sm2_assign != ECAT_CFG_DEF_SM2_ASSIGN ||
+            s->sm3_assign != ECAT_CFG_DEF_SM3_ASSIGN)
+            printf("    map objs : rx 0x%04X (SM2 0x%04X) / tx 0x%04X (SM3 0x%04X), <=%d/obj\n",
+                   s->rxpdo_map_base, s->sm2_assign, s->txpdo_map_base, s->sm3_assign,
+                   s->map_entries_per_obj);
+        for (k = 0; k < s->startup_sdo_count; k++)
+            printf("    initSDO 0x%04X:%02X = 0x%X (%uB)  %s\n",
+                   s->startup_sdo[k].index, s->startup_sdo[k].subindex,
+                   s->startup_sdo[k].value, s->startup_sdo[k].size,
+                   s->startup_sdo[k].comment);
         for (k = 0; k < s->rxpdo_count; k++)
             printf("    RxPDO 0x%04X:%02X %2ub -> map 0x%08X  %s\n",
                    s->rxpdo[k].index, s->rxpdo[k].subindex, s->rxpdo[k].bitlen,

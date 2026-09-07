@@ -628,6 +628,18 @@ int slavesim_foe_received(int pos, uint8_t *buf, int cap)
    return s->foe_len;
 }
 
+int slavesim_od_get(int pos, uint16_t index, uint8_t sub, uint32_t *val)
+{
+   slave_t *s;
+   od_entry_t *e;
+   if (pos < 1 || pos > g_nslaves) return 0;
+   s = &g_slave[pos - 1];
+   e = od_find(s, index, sub);
+   if (e == NULL) return 0;
+   if (val) *val = e->val;
+   return 1;
+}
+
 void slavesim_init_n(int n)
 {
    if (n < 1) n = 1;

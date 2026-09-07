@@ -613,9 +613,16 @@ int main()
 	            printf("%d slaves found and configured.\n",ec_slavecount);
 
 	            /* Verify the drives on the bus match the configured vendor/product/
-	             * revision (skips slaves with no expected_* set). Warns only. */
-	            if (ecat_diag_verify_identity(&g_ecat_config) != 0)
-	               printf("WARNING: slave identity mismatch - check wiring / config.\n");
+	             * revision (skips slaves with no expected_* set). Warns only.
+	             * Skipped entirely when verify_identity is off (e.g. during
+	             * hardware evaluation with an undecided drive family). */
+	            if (g_ecat_config.network.verify_identity)
+	            {
+	               if (ecat_diag_verify_identity(&g_ecat_config) != 0)
+	                  printf("WARNING: slave identity mismatch - check wiring / config.\n");
+	            }
+	            else
+	               printf("identity verification disabled in config.\n");
 
 	  	      /*link slave specific setup to preop->safeop hook. We do PDO mapping and can set some parameters with SDO messages for example: max motor current in mA*/
 	  	      /* ec_config function will call this function */

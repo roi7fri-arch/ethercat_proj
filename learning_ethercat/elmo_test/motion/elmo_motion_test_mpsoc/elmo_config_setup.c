@@ -24,21 +24,24 @@
 /* Parsed once in main(); shared with elmo_com.c via elmo_config_setup.h. */
 ecat_config_t g_ecat_config;
 
-/* Elmo Platinum accepts at most 8 entries per PDO mapping object. Longer lists
- * are split across consecutive objects (0x1600, 0x1601, ... / 0x1a00, ...). */
-#define ELMO_MAP_MAX_ENTRIES 8
-
 /* Apply one PDO direction and assign the used mapping objects to its sync
  * manager. map_base = first mapping object (0x1600 Rx / 0x1a00 Tx),
- * sm_assign = SM PDO assign object (0x1c12 Rx / 0x1c13 Tx).
+ * sm_assign = SM PDO assign object (0x1c12 Rx / 0x1c13 Tx),
+ * per_obj = max entries per mapping object (drive-dependent, default 8).
+ * Longer lists are split across consecutive objects (map_base, map_base+1, ...).
  * Returns the accumulated SDO working counter. */
 static int apply_pdo_direction(uint16 slave, uint16 map_base, uint16 sm_assign,
+                               int per_obj,
                                const ecat_pdo_entry_t *entries, int count)
 {
     int retval = 0;
     uint8 zero = 0;
-    int n_objs = (count + ELMO_MAP_MAX_ENTRIES - 1) / ELMO_MAP_MAX_ENTRIES;
+    int n_objs;
     int k, j;
+
+    if (per_obj < 1)
+        per_obj = 8;
+    n_objs = (count + per_obj - 1) / per_obj;
 
     if (n_objs < 1)
         n_objs = 1; /* still clear and assign one (empty) object */
@@ -50,12 +53,12 @@ static int apply_pdo_direction(uint16 slave, uint16 map_base, uint16 sm_assign,
     for (k = 0; k < n_objs; k++)
     {
         uint16 map_idx = (uint16)(map_base + k);
-        int start = k * ELMO_MAP_MAX_ENTRIES;
+        int start = k * per_obj;
         int n_in = count - start;
         uint8 c;
 
-        if (n_in > ELMO_MAP_MAX_ENTRIES)
-            n_in = ELMO_MAP_MAX_ENTRIES;
+        if (n_in > per_obj)
+            n_in = per_obj;
         if (n_in < 0)
             n_in = 0;
 
@@ -105,6 +108,22 @@ int elmo_platinum_setup_from_config(uint16 slave)
         return 0;
     }
 
+    /* Vendor-specific PRE-OP init parameters (data-driven, applied first so a
+     * profile can even set mapping-related objects before we map). */
+    if (sc->startup_sdo_count > 0)
+    {
+        int i;
+        for (i = 0; i < sc->startup_sdo_count; i++)
+        {
+            const ecat_sdo_cmd_t *c = &sc->startup_sdo[i];
+            uint32 v = c->value;   /* little-endian; low bytes used for 1/2 B */
+            retval += ec_SDOwrite(slave, c->index, c->subindex, FALSE,
+                                  (int)c->size, &v, EC_TIMEOUTSAFE);
+            printf("slave %d init SDO 0x%04X:%02X = 0x%X (%uB) %s\n",
+                   slave, c->index, c->subindex, c->value, c->size, c->comment);
+        }
+    }
+
     /* Modes of operation (0x6060), read back via 0x6061. */
     mode = (uint8)sc->mode_of_operation;
     retval += ec_SDOwrite(slave, 0x6060, 0x00, FALSE,
@@ -116,10 +135,12 @@ int elmo_platinum_setup_from_config(uint16 slave)
     printf("slave %d '%s': mode of operation requested %d, read back %d\n",
            slave, sc->name, sc->mode_of_operation, mode);
 
-    /* RxPDO -> 0x1600.. assigned by SM2 (0x1c12). */
-    retval += apply_pdo_direction(slave, 0x1600, 0x1c12, sc->rxpdo, sc->rxpdo_count);
-    /* TxPDO -> 0x1a00.. assigned by SM3 (0x1c13). */
-    retval += apply_pdo_direction(slave, 0x1a00, 0x1c13, sc->txpdo, sc->txpdo_count);
+    /* RxPDO -> map base assigned by SM2; TxPDO -> map base assigned by SM3.
+     * Objects/bases come from config so non-Elmo families work unchanged. */
+    retval += apply_pdo_direction(slave, sc->rxpdo_map_base, sc->sm2_assign,
+                                  sc->map_entries_per_obj, sc->rxpdo, sc->rxpdo_count);
+    retval += apply_pdo_direction(slave, sc->txpdo_map_base, sc->sm3_assign,
+                                  sc->map_entries_per_obj, sc->txpdo, sc->txpdo_count);
 
     printf("slave %d configured from JSON (rx=%d, tx=%d), SDO wkc sum = %d\n",
            slave, sc->rxpdo_count, sc->txpdo_count, retval);

@@ -137,6 +137,27 @@ input:focus, select:focus { border-color: var(--accent); }
 
 .error { color: var(--danger); font-size: 12px; }
 
+.advanced { padding: 0 14px 14px; }
+.advanced > summary {
+  cursor: pointer; padding: 14px 0 10px; color: var(--muted);
+  font-size: 12px; text-transform: uppercase; letter-spacing: .06em; list-style: none;
+}
+.advanced > summary::-webkit-details-marker { display: none; }
+.advanced > summary::before { content: "\25B8 "; }
+.advanced[open] > summary::before { content: "\25BE "; }
+.advanced .grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; align-items: end; margin-bottom: 12px;
+}
+.advanced label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); min-width: 0; }
+.advanced label input { color: var(--text); width: 100%; min-width: 0; }
+.sdo-head { display: flex; align-items: baseline; gap: 10px; margin: 6px 0 8px; }
+.sdo-head h4 { margin: 0; font-size: 13px; }
+.sdo-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 10px; }
+.sdo-table th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.sdo-table td { padding: 4px 8px; border-bottom: 1px solid var(--line); }
+.sdo-table td input, .sdo-table td select { width: 100%; min-width: 0; }
+.sdo-table td:nth-child(2), .sdo-table td:nth-child(3) { width: 64px; }
+
 .loading, .empty { display: grid; place-items: center; min-height: 240px; color: var(--muted); }
 
 .modal-backdrop {

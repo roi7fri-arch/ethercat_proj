@@ -150,6 +150,63 @@ static void test_two_axis_string(void)
    ec_close();
 }
 
+/* Vendor-agnostic config: drive profile, per-slave startup SDO list, custom
+ * mapping-object bases, and verify_identity toggle. Proves the generic
+ * (Elmo Platinum / Gold / ACS / generic-CiA402) config path end to end. */
+static const char *GENERIC_JSON =
+"{\n"
+"  \"version\": 1,\n"
+"  \"network\": { \"interface\": \"eth0\", \"cycle_time_us\": 500,\n"
+"                \"number_of_cycles\": 0, \"distributed_clock\": false,\n"
+"                \"verify_identity\": false },\n"
+"  \"slaves\": [\n"
+"    { \"position\": 1, \"name\": \"ACS Axis\", \"profile\": \"acs\", \"mode_of_operation\": 8,\n"
+"      \"startup_sdo\": [\n"
+"        {\"index\":\"0x6072\",\"subindex\":0,\"size\":2,\"value\":\"0x03E8\",\"comment\":\"max torque\"},\n"
+"        {\"index\":\"0x60C2\",\"subindex\":1,\"size\":1,\"value\":1,\"comment\":\"ip time units\"} ],\n"
+"      \"rxpdo\": [ {\"index\":\"0x6040\",\"subindex\":0,\"bitlen\":16,\"name\":\"CW\"},\n"
+"                  {\"index\":\"0x607A\",\"subindex\":0,\"bitlen\":32,\"name\":\"TargetPos\"} ],\n"
+"      \"txpdo\": [ {\"index\":\"0x6041\",\"subindex\":0,\"bitlen\":16,\"name\":\"SW\"},\n"
+"                  {\"index\":\"0x6064\",\"subindex\":0,\"bitlen\":32,\"name\":\"ActPos\"} ] }\n"
+"  ]\n"
+"}\n";
+
+static void test_generic_features(void)
+{
+   uint32_t v = 0;
+   const ecat_slave_config_t *sc;
+   printf("TEST vendor-agnostic config (profile / startup_sdo / map bases / verify_identity)\n");
+   memset(&g_ecat_config, 0, sizeof(g_ecat_config));
+   int rc = ecat_config_load_string(GENERIC_JSON, &g_ecat_config);
+   CHECK(rc == 0, "generic config parsed (%s)", rc == 0 ? "ok" : ecat_config_last_error());
+   if (rc != 0) return;
+
+   sc = &g_ecat_config.slaves[0];
+   CHECK(strcmp(sc->profile, "acs") == 0, "slave profile parsed = '%s'", sc->profile);
+   CHECK(g_ecat_config.network.verify_identity == 0, "verify_identity=false parsed");
+
+   /* Mapping bases default to the standard CiA402 objects when omitted. */
+   CHECK(sc->rxpdo_map_base == 0x1600, "rxpdo_map_base defaults to 0x1600 (got 0x%04X)", sc->rxpdo_map_base);
+   CHECK(sc->txpdo_map_base == 0x1A00, "txpdo_map_base defaults to 0x1A00 (got 0x%04X)", sc->txpdo_map_base);
+   CHECK(sc->sm2_assign == 0x1C12, "sm2_assign defaults to 0x1C12 (got 0x%04X)", sc->sm2_assign);
+   CHECK(sc->sm3_assign == 0x1C13, "sm3_assign defaults to 0x1C13 (got 0x%04X)", sc->sm3_assign);
+   CHECK(sc->map_entries_per_obj == 8, "map_entries_per_obj defaults to 8 (got %d)", sc->map_entries_per_obj);
+
+   CHECK(sc->startup_sdo_count == 2, "startup_sdo parsed 2 entries (got %d)", sc->startup_sdo_count);
+   CHECK(sc->startup_sdo[0].index == 0x6072 && sc->startup_sdo[0].size == 2 &&
+         sc->startup_sdo[0].value == 0x03E8,
+         "startup_sdo[0] = 0x6072:0 size 2 val 0x3E8");
+
+   /* Bring the axis to OP and confirm the master actually wrote the startup SDOs. */
+   int r = run_to_op(1);
+   CHECK(r == 0, "axis reached OPERATIONAL with generic config");
+   CHECK(slavesim_od_get(1, 0x6072, 0, &v) && v == 0x03E8,
+         "startup SDO 0x6072 applied to slave (read back 0x%X)", v);
+   CHECK(slavesim_od_get(1, 0x60C2, 1, &v) && v == 1,
+         "startup SDO 0x60C2:1 applied to slave (read back 0x%X)", v);
+   ec_close();
+}
+
 int main(int argc, char *argv[])
 {
    const char *path = (argc > 1 && argv[1][0] != '-') ? argv[1] : DEFAULT_CONFIG;
@@ -158,6 +215,7 @@ int main(int argc, char *argv[])
    printf("=== GUI config -> stack integration test ===\n");
    test_from_file(path);
    test_two_axis_string();
+   test_generic_features();
 
    printf("\n=== %d passed, %d failed ===\n", g_pass, g_fail);
    return g_fail ? 1 : 0;

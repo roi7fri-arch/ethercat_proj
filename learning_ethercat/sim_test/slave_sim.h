@@ -70,6 +70,11 @@ void slavesim_set_dcdiff(int pos, uint32_t ns, int ahead);
  *  slave received (may exceed \a cap). Used to verify ecat_foe_download_*. */
 int slavesim_foe_received(int pos, uint8_t *buf, int cap);
 
+/** Read back a CoE object-dictionary value stored on the slave at 1-based \a pos
+ *  (as written by the master via SDO download). Returns 1 and sets \a val when
+ *  the object exists, 0 otherwise. Used to verify per-slave startup_sdo writes. */
+int slavesim_od_get(int pos, uint16_t index, uint8_t sub, uint32_t *val);
+
 /** Process one EtherCAT payload in place.
  *
  * \param ecat  pointer to the EtherCAT frame payload (frame + 14 byte ETH hdr),

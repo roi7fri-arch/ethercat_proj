@@ -138,6 +138,90 @@ MODE_TEMPLATES = {
 }
 
 
+# --- Drive profiles -------------------------------------------------------
+# The tool is vendor-agnostic: a profile bundles the object picklist and the
+# per-mode PDO templates that suit a given drive family. Elmo profiles expose
+# the manufacturer objects; ACS / generic profiles are restricted to the
+# standard CiA402 dictionary. The device's own SII/ESI still drives per-slave
+# SM sizing at runtime, so a wrong guess here is only a picklist inconvenience.
+
+def _is_standard_index(index_str):
+    idx = int(index_str, 16)
+    return (0x1000 <= idx <= 0x1FFF) or (0x6000 <= idx <= 0x9FFF)
+
+
+def _std_only(entries):
+    return [dict(e) for e in entries if _is_standard_index(e["index"])]
+
+
+_STD_OBJECTS = {"rx": _std_only(OBJECT_DICTIONARY["rx"]),
+                "tx": _std_only(OBJECT_DICTIONARY["tx"])}
+_STD_TEMPLATES = {
+    m: {"rx": _std_only(t["rx"]), "tx": _std_only(t["tx"])}
+    for m, t in MODE_TEMPLATES.items()
+}
+
+DEFAULT_PROFILE = "elmo_platinum"
+
+PROFILES = [
+    {
+        "id": "elmo_platinum",
+        "label": "Elmo Platinum",
+        "default_vendor_id": "0x0000009A",
+        "object_dictionary": OBJECT_DICTIONARY,
+        "mode_templates": MODE_TEMPLATES,
+    },
+    {
+        "id": "elmo_gold",
+        "label": "Elmo Gold",
+        "default_vendor_id": "0x0000009A",
+        "object_dictionary": OBJECT_DICTIONARY,
+        "mode_templates": MODE_TEMPLATES,
+    },
+    {
+        "id": "acs",
+        "label": "ACS Motion Control",
+        "default_vendor_id": "",
+        "object_dictionary": _STD_OBJECTS,
+        "mode_templates": _STD_TEMPLATES,
+    },
+    {
+        "id": "generic_cia402",
+        "label": "Generic CiA402",
+        "default_vendor_id": "",
+        "object_dictionary": _STD_OBJECTS,
+        "mode_templates": _STD_TEMPLATES,
+    },
+]
+
+# Default PDO-mapping / SM-assignment objects (standard CiA402 addresses).
+MAP_DEFAULTS = {
+    "rxpdo_map_base": "0x1600",
+    "txpdo_map_base": "0x1A00",
+    "sm2_assign": "0x1C12",
+    "sm3_assign": "0x1C13",
+    "map_entries_per_obj": 8,
+}
+
+
+def default_slave(position=1, profile=DEFAULT_PROFILE, name="Elmo Platinum",
+                  mode=8):
+    return {
+        "position": position,
+        "name": name,
+        "profile": profile,
+        "mode_of_operation": mode,
+        "rxpdo_map_base": MAP_DEFAULTS["rxpdo_map_base"],
+        "txpdo_map_base": MAP_DEFAULTS["txpdo_map_base"],
+        "sm2_assign": MAP_DEFAULTS["sm2_assign"],
+        "sm3_assign": MAP_DEFAULTS["sm3_assign"],
+        "map_entries_per_obj": MAP_DEFAULTS["map_entries_per_obj"],
+        "startup_sdo": [],
+        "rxpdo": list(MODE_TEMPLATES[mode]["rx"]),
+        "txpdo": list(MODE_TEMPLATES[mode]["tx"]),
+    }
+
+
 def default_config():
     return {
         "version": CONFIG_VERSION,
@@ -152,14 +236,7 @@ def default_config():
             "sync_ki_div": 20,
             "auto_recovery": True,
             "auto_recovery_timeout_us": 500,
+            "verify_identity": True,
         },
-        "slaves": [
-            {
-                "position": 1,
-                "name": "Elmo Platinum",
-                "mode_of_operation": 8,
-                "rxpdo": list(MODE_TEMPLATES[8]["rx"]),
-                "txpdo": list(MODE_TEMPLATES[8]["tx"]),
-            }
-        ],
+        "slaves": [default_slave()],
     }

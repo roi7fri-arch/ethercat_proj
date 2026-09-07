@@ -10,16 +10,32 @@
     "sync_kp_div": 100,
     "sync_ki_div": 20,
     "auto_recovery": true,
-    "auto_recovery_timeout_us": 500
+    "auto_recovery_timeout_us": 500,
+    "verify_identity": true
   },
   "slaves": [
     {
       "position": 1,
       "name": "Elmo Platinum Axis 1",
+      "profile": "elmo_platinum",
       "mode_of_operation": 8,
       "expected_vendor_id": "0x0000009A",
       "expected_product_code": "0x00030924",
       "expected_revision": "0x00010420",
+      "rxpdo_map_base": "0x1600",
+      "txpdo_map_base": "0x1A00",
+      "sm2_assign": "0x1C12",
+      "sm3_assign": "0x1C13",
+      "map_entries_per_obj": 8,
+      "startup_sdo": [
+        {
+          "index": "0x6072",
+          "subindex": 0,
+          "size": 2,
+          "value": "0x03E8",
+          "comment": "max torque = 100.0%"
+        }
+      ],
       "rxpdo": [
         {
           "index": "0x6040",

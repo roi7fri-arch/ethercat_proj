@@ -142,6 +142,26 @@ MODE_TEMPLATES = {
 }
 
 
+# Drive profiles. The tool is vendor-agnostic; a profile is only a label that
+# travels with the slave so the master/tooling knows the intended drive family.
+DEFAULT_PROFILE = "elmo_platinum"
+PROFILES = [
+    ("elmo_platinum", "Elmo Platinum"),
+    ("elmo_gold", "Elmo Gold"),
+    ("acs", "ACS Motion Control"),
+    ("generic_cia402", "Generic CiA402"),
+]
+
+# Default PDO-mapping / SM-assignment objects (standard CiA402 addresses).
+MAP_DEFAULTS = {
+    "rxpdo_map_base": "0x1600",
+    "txpdo_map_base": "0x1A00",
+    "sm2_assign": "0x1C12",
+    "sm3_assign": "0x1C13",
+    "map_entries_per_obj": 8,
+}
+
+
 def mode_label(value):
     for v, label in MODES:
         if v == value:
@@ -154,6 +174,20 @@ def mode_value(label):
         if lbl == label:
             return v
     return int(label)
+
+
+def profile_label(pid):
+    for i, label in PROFILES:
+        if i == pid:
+            return label
+    return pid
+
+
+def profile_id(label):
+    for i, lbl in PROFILES:
+        if lbl == label:
+            return i
+    return label
 
 
 def normalize_index(text):
@@ -297,6 +331,91 @@ class PdoEditor(ttk.LabelFrame):
         return result
 
 
+class StartupSdoEditor(ttk.LabelFrame):
+    """Editable, ordered list of startup SDO writes (index/sub/size/value)."""
+
+    def __init__(self, master):
+        super().__init__(master, text="Startup SDO writes  (applied before PDO mapping)", padding=6)
+
+        columns = ("index", "sub", "size", "value", "comment")
+        self.tree = ttk.Treeview(self, columns=columns, show="headings", height=5)
+        for col, text, width, anchor in (
+            ("index", "Index", 70, "center"), ("sub", "Sub", 40, "center"),
+            ("size", "Size", 45, "center"), ("value", "Value", 100, "center"),
+            ("comment", "Comment", 200, "w")):
+            self.tree.heading(col, text=text)
+            self.tree.column(col, width=width, anchor=anchor)
+        self.tree.grid(row=0, column=0, columnspan=8, sticky="nsew")
+        scroll = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scroll.set)
+        scroll.grid(row=0, column=8, sticky="ns")
+
+        ttk.Label(self, text="Index").grid(row=1, column=0, sticky="e")
+        self.idx_var = tk.StringVar(value="0x")
+        ttk.Entry(self, textvariable=self.idx_var, width=8).grid(row=1, column=1, sticky="w")
+        ttk.Label(self, text="Sub").grid(row=1, column=2, sticky="e")
+        self.sub_var = tk.StringVar(value="0")
+        ttk.Entry(self, textvariable=self.sub_var, width=5).grid(row=1, column=3, sticky="w")
+        ttk.Label(self, text="Size").grid(row=1, column=4, sticky="e")
+        self.size_cb = ttk.Combobox(self, values=["1", "2", "4"], state="readonly", width=4)
+        self.size_cb.set("4")
+        self.size_cb.grid(row=1, column=5, sticky="w")
+        ttk.Label(self, text="Value").grid(row=2, column=0, sticky="e")
+        self.value_var = tk.StringVar(value="0x0")
+        ttk.Entry(self, textvariable=self.value_var, width=12).grid(row=2, column=1, columnspan=2, sticky="w")
+        ttk.Label(self, text="Comment").grid(row=2, column=3, sticky="e")
+        self.comment_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.comment_var, width=24).grid(row=2, column=4, columnspan=2, sticky="we")
+        ttk.Button(self, text="Add", command=self._add_manual).grid(row=2, column=6, sticky="we")
+        ttk.Button(self, text="Remove", command=self._remove).grid(row=2, column=7, sticky="we")
+
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(4, weight=1)
+
+    def _add_manual(self):
+        try:
+            index = normalize_index(self.idx_var.get())
+            sub = int(self.sub_var.get())
+            size = int(self.size_cb.get())
+            value = int(self.value_var.get().strip(), 0)
+            if not 0 <= sub <= 255:
+                raise ValueError("subindex out of range (0-255)")
+            if size not in (1, 2, 4):
+                raise ValueError("size must be 1, 2 or 4")
+        except ValueError as exc:
+            messagebox.showerror("Invalid startup SDO", str(exc))
+            return
+        self.tree.insert("", "end", values=(index, sub, size, "0x%08X" % (value & 0xFFFFFFFF),
+                                            self.comment_var.get().strip()))
+        self.idx_var.set("0x")
+        self.value_var.set("0x0")
+        self.comment_var.set("")
+
+    def _remove(self):
+        for item in self.tree.selection():
+            self.tree.delete(item)
+
+    def set_entries(self, entries):
+        self.tree.delete(*self.tree.get_children())
+        for e in entries:
+            self.tree.insert("", "end", values=(
+                e.get("index", "0x0000"), e.get("subindex", 0), e.get("size", 4),
+                e.get("value", "0x00000000"), e.get("comment", "")))
+
+    def get_entries(self):
+        result = []
+        for item in self.tree.get_children():
+            index, sub, size, value, comment = self.tree.item(item, "values")
+            result.append({
+                "index": index,
+                "subindex": int(sub),
+                "size": int(size),
+                "value": value,
+                "comment": comment,
+            })
+        return result
+
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -339,6 +458,7 @@ class App(tk.Tk):
         self.shift_var = tk.StringVar(value="0")
         self.kp_var = tk.StringVar(value="100")
         self.ki_var = tk.StringVar(value="20")
+        self.verify_id_var = tk.BooleanVar(value=True)
 
         ttk.Label(frame, text="Interface").grid(row=0, column=0, sticky="e")
         ttk.Entry(frame, textvariable=self.iface_var, width=10).grid(row=0, column=1, padx=(2, 12))
@@ -356,6 +476,8 @@ class App(tk.Tk):
         ttk.Entry(frame, textvariable=self.ki_var, width=8).grid(row=1, column=3, padx=2, pady=(4, 0))
         ttk.Label(frame, text="Redundant iface").grid(row=1, column=4, sticky="e", pady=(4, 0))
         ttk.Entry(frame, textvariable=self.redundant_iface_var, width=10).grid(row=1, column=5, padx=2, pady=(4, 0))
+        ttk.Checkbutton(frame, text="Verify slave identity at start-up",
+                        variable=self.verify_id_var).grid(row=1, column=6, columnspan=3, sticky="w", pady=(4, 0))
 
     def _build_body(self):
         body = ttk.Frame(self)
@@ -388,6 +510,28 @@ class App(tk.Tk):
         self.mode_cb.grid(row=0, column=3, padx=2)
         ttk.Button(head, text="Load mode template", command=self._load_template).grid(
             row=0, column=4, padx=8)
+        ttk.Label(head, text="Drive profile").grid(row=1, column=0, sticky="e", pady=(4, 0))
+        self.profile_cb = ttk.Combobox(head, values=[p[1] for p in PROFILES],
+                                       state="readonly", width=26)
+        self.profile_cb.grid(row=1, column=1, padx=(2, 12), pady=(4, 0))
+
+        # Advanced: PDO-mapping object bases (defaults suit standard CiA402 drives).
+        adv = ttk.LabelFrame(right, text="PDO-mapping objects", padding=6)
+        adv.pack(fill="x", pady=(8, 0))
+        self.rxmap_var = tk.StringVar(value=MAP_DEFAULTS["rxpdo_map_base"])
+        self.txmap_var = tk.StringVar(value=MAP_DEFAULTS["txpdo_map_base"])
+        self.sm2_var = tk.StringVar(value=MAP_DEFAULTS["sm2_assign"])
+        self.sm3_var = tk.StringVar(value=MAP_DEFAULTS["sm3_assign"])
+        self.per_obj_var = tk.StringVar(value=str(MAP_DEFAULTS["map_entries_per_obj"]))
+        for col, (text, var) in enumerate((
+                ("RxPDO map base", self.rxmap_var), ("TxPDO map base", self.txmap_var),
+                ("SM2 assign", self.sm2_var), ("SM3 assign", self.sm3_var),
+                ("Entries/obj", self.per_obj_var))):
+            ttk.Label(adv, text=text).grid(row=0, column=col * 2, sticky="e", padx=(6, 2))
+            ttk.Entry(adv, textvariable=var, width=9).grid(row=0, column=col * 2 + 1, sticky="w")
+
+        self.sdo_editor = StartupSdoEditor(right)
+        self.sdo_editor.pack(fill="x", pady=(8, 0))
 
         maps = ttk.Frame(right)
         maps.pack(fill="both", expand=True, pady=(8, 0))
@@ -403,6 +547,16 @@ class App(tk.Tk):
         s = self.slaves[self.current]
         s["name"] = self.sname_var.get().strip()
         s["mode_of_operation"] = mode_value(self.mode_cb.get()) if self.mode_cb.get() else 8
+        s["profile"] = profile_id(self.profile_cb.get()) if self.profile_cb.get() else DEFAULT_PROFILE
+        s["rxpdo_map_base"] = self.rxmap_var.get().strip() or MAP_DEFAULTS["rxpdo_map_base"]
+        s["txpdo_map_base"] = self.txmap_var.get().strip() or MAP_DEFAULTS["txpdo_map_base"]
+        s["sm2_assign"] = self.sm2_var.get().strip() or MAP_DEFAULTS["sm2_assign"]
+        s["sm3_assign"] = self.sm3_var.get().strip() or MAP_DEFAULTS["sm3_assign"]
+        try:
+            s["map_entries_per_obj"] = int(self.per_obj_var.get())
+        except ValueError:
+            s["map_entries_per_obj"] = MAP_DEFAULTS["map_entries_per_obj"]
+        s["startup_sdo"] = self.sdo_editor.get_entries()
         s["rxpdo"] = self.rx_editor.get_entries()
         s["txpdo"] = self.tx_editor.get_entries()
 
@@ -411,6 +565,13 @@ class App(tk.Tk):
         s = self.slaves[i]
         self.sname_var.set(s.get("name", ""))
         self.mode_cb.set(mode_label(s.get("mode_of_operation", 8)))
+        self.profile_cb.set(profile_label(s.get("profile", DEFAULT_PROFILE)))
+        self.rxmap_var.set(s.get("rxpdo_map_base", MAP_DEFAULTS["rxpdo_map_base"]))
+        self.txmap_var.set(s.get("txpdo_map_base", MAP_DEFAULTS["txpdo_map_base"]))
+        self.sm2_var.set(s.get("sm2_assign", MAP_DEFAULTS["sm2_assign"]))
+        self.sm3_var.set(s.get("sm3_assign", MAP_DEFAULTS["sm3_assign"]))
+        self.per_obj_var.set(str(s.get("map_entries_per_obj", MAP_DEFAULTS["map_entries_per_obj"])))
+        self.sdo_editor.set_entries(s.get("startup_sdo", []))
         self.rx_editor.set_entries(s.get("rxpdo", []))
         self.tx_editor.set_entries(s.get("txpdo", []))
 
@@ -449,8 +610,15 @@ class App(tk.Tk):
     def _add_slave(self):
         self._commit_current()
         self.slaves.append({
-            "name": "Elmo Platinum",
+            "name": "Drive",
+            "profile": DEFAULT_PROFILE,
             "mode_of_operation": 8,
+            "rxpdo_map_base": MAP_DEFAULTS["rxpdo_map_base"],
+            "txpdo_map_base": MAP_DEFAULTS["txpdo_map_base"],
+            "sm2_assign": MAP_DEFAULTS["sm2_assign"],
+            "sm3_assign": MAP_DEFAULTS["sm3_assign"],
+            "map_entries_per_obj": MAP_DEFAULTS["map_entries_per_obj"],
+            "startup_sdo": [],
             "rxpdo": [],
             "txpdo": [],
         })
@@ -477,6 +645,13 @@ class App(tk.Tk):
             self.current = None
             self.sname_var.set("")
             self.mode_cb.set("")
+            self.profile_cb.set("")
+            self.rxmap_var.set(MAP_DEFAULTS["rxpdo_map_base"])
+            self.txmap_var.set(MAP_DEFAULTS["txpdo_map_base"])
+            self.sm2_var.set(MAP_DEFAULTS["sm2_assign"])
+            self.sm3_var.set(MAP_DEFAULTS["sm3_assign"])
+            self.per_obj_var.set(str(MAP_DEFAULTS["map_entries_per_obj"]))
+            self.sdo_editor.set_entries([])
             self.rx_editor.set_entries([])
             self.tx_editor.set_entries([])
         else:
@@ -526,12 +701,20 @@ class App(tk.Tk):
                 "sync0_shift_us": shift,
                 "sync_kp_div": kp_div,
                 "sync_ki_div": ki_div,
+                "verify_identity": bool(self.verify_id_var.get()),
             },
             "slaves": [
                 {
                     "position": i + 1,
                     "name": s.get("name", ""),
+                    "profile": s.get("profile", DEFAULT_PROFILE),
                     "mode_of_operation": s.get("mode_of_operation", 8),
+                    "rxpdo_map_base": s.get("rxpdo_map_base", MAP_DEFAULTS["rxpdo_map_base"]),
+                    "txpdo_map_base": s.get("txpdo_map_base", MAP_DEFAULTS["txpdo_map_base"]),
+                    "sm2_assign": s.get("sm2_assign", MAP_DEFAULTS["sm2_assign"]),
+                    "sm3_assign": s.get("sm3_assign", MAP_DEFAULTS["sm3_assign"]),
+                    "map_entries_per_obj": s.get("map_entries_per_obj", MAP_DEFAULTS["map_entries_per_obj"]),
+                    "startup_sdo": s.get("startup_sdo", []),
                     "rxpdo": s.get("rxpdo", []),
                     "txpdo": s.get("txpdo", []),
                 }
@@ -549,11 +732,19 @@ class App(tk.Tk):
         self.shift_var.set(str(net.get("sync0_shift_us", 0)))
         self.kp_var.set(str(net.get("sync_kp_div", 100)))
         self.ki_var.set(str(net.get("sync_ki_div", 20)))
+        self.verify_id_var.set(bool(net.get("verify_identity", True)))
         self.slaves = []
         for s in cfg.get("slaves", []):
             self.slaves.append({
                 "name": s.get("name", ""),
+                "profile": s.get("profile", DEFAULT_PROFILE),
                 "mode_of_operation": s.get("mode_of_operation", 8),
+                "rxpdo_map_base": s.get("rxpdo_map_base", MAP_DEFAULTS["rxpdo_map_base"]),
+                "txpdo_map_base": s.get("txpdo_map_base", MAP_DEFAULTS["txpdo_map_base"]),
+                "sm2_assign": s.get("sm2_assign", MAP_DEFAULTS["sm2_assign"]),
+                "sm3_assign": s.get("sm3_assign", MAP_DEFAULTS["sm3_assign"]),
+                "map_entries_per_obj": s.get("map_entries_per_obj", MAP_DEFAULTS["map_entries_per_obj"]),
+                "startup_sdo": s.get("startup_sdo", []),
                 "rxpdo": s.get("rxpdo", []),
                 "txpdo": s.get("txpdo", []),
             })
@@ -565,6 +756,8 @@ class App(tk.Tk):
         else:
             self.sname_var.set("")
             self.mode_cb.set("")
+            self.profile_cb.set("")
+            self.sdo_editor.set_entries([])
             self.rx_editor.set_entries([])
             self.tx_editor.set_entries([])
         self._refresh_slave_list()
@@ -576,8 +769,9 @@ class App(tk.Tk):
         self._apply_config({
             "network": {"interface": "eth0", "redundant_interface": "", "cycle_time_us": 250,
                         "number_of_cycles": 12000, "distributed_clock": True,
-                        "sync0_shift_us": 0},
-            "slaves": [{"name": "Elmo Platinum", "mode_of_operation": 8,
+                        "sync0_shift_us": 0, "verify_identity": True},
+            "slaves": [{"name": "Elmo Platinum", "profile": DEFAULT_PROFILE,
+                        "mode_of_operation": 8,
                         "rxpdo": [{"index": i, "subindex": s, "bitlen": b, "name": n}
                                   for i, s, b, n in MODE_TEMPLATES[8]["rx"]],
                         "txpdo": [{"index": i, "subindex": s, "bitlen": b, "name": n}
