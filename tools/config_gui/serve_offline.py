@@ -15,8 +15,10 @@ Usage:
 import argparse
 import json
 import os
+import re
 import sys
 import threading
+import time
 import types
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -524,6 +526,26 @@ class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
 
+def _check_dist():
+    """Verify index.html and every /assets file it references are present.
+    Returns a list of human-readable problems (empty when the copy is intact)."""
+    problems = []
+    index = os.path.join(DIST, "index.html")
+    if not os.path.isfile(index):
+        return ["frontend/dist/index.html is missing"]
+    try:
+        with open(index, "r", encoding="utf-8", errors="replace") as fh:
+            html = fh.read()
+    except OSError as exc:
+        return ["cannot read index.html: %s" % exc]
+    refs = set(re.findall(r'(?:src|href)\s*=\s*["\'](/assets/[^"\']+)["\']', html))
+    refs |= set(re.findall(r'data-src\s*=\s*["\'](/assets/[^"\']+)["\']', html))
+    for ref in sorted(refs):
+        if not os.path.isfile(os.path.join(DIST, ref.lstrip("/"))):
+            problems.append("index.html references %s but the file is missing" % ref)
+    return problems
+
+
 def main():
     parser = argparse.ArgumentParser(description="Offline EtherCAT Config Builder (stdlib only)")
     parser.add_argument("--host", default="127.0.0.1")
@@ -535,12 +557,34 @@ def main():
         sys.stderr.write("ERROR: %s missing. This package must include the prebuilt React UI.\n" % DIST)
         sys.exit(1)
 
-    url = "http://%s:%d/" % ("localhost" if args.host in ("0.0.0.0", "127.0.0.1") else args.host, args.port)
-    httpd = ThreadingHTTPServer((args.host, args.port), Handler)
+    # A stale/partial dist copy is the #1 cause of a blank page: catch it here
+    # with a clear message instead of letting the browser fail silently.
+    problems = _check_dist()
+    if problems:
+        sys.stderr.write("ERROR: the frontend/dist copy is incomplete or out of date:\n")
+        for p in problems:
+            sys.stderr.write("  - %s\n" % p)
+        sys.stderr.write("Re-copy the ENTIRE frontend/dist folder (index.html AND assets/) "
+                         "from the build machine, then retry.\n")
+        sys.exit(1)
+
+    host_label = "localhost" if args.host in ("0.0.0.0", "127.0.0.1") else args.host
+    try:
+        httpd = ThreadingHTTPServer((args.host, args.port), Handler)
+    except OSError as exc:
+        sys.stderr.write("ERROR: cannot listen on %s:%d (%s).\n" % (args.host, args.port, exc))
+        sys.stderr.write("A server (perhaps an earlier run of this tool) is likely already "
+                         "using that port.\nClose it, or start this one on another port, e.g.:\n")
+        sys.stderr.write("    python serve_offline.py --port 8090\n")
+        sys.exit(1)
+
+    url = "http://%s:%d/" % (host_label, args.port)
     print("EtherCAT Config Builder (offline) serving %s" % url)
     print("Press Ctrl+C to stop.")
     if not args.no_browser:
-        threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+        # Cache-buster so a fresh launch never reuses a stale cached index.html.
+        open_url = url + "?v=%d" % int(time.time())
+        threading.Timer(0.8, lambda: webbrowser.open(open_url)).start()
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
