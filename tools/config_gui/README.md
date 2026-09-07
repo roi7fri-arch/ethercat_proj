@@ -17,6 +17,20 @@ object maps).
 | Linux / macOS | `./start.sh` | `Ctrl+C`, or `./stop.sh` from another terminal |
 | Windows | double-click `start.bat` | close the window, or run `stop.bat` |
 
+### Offline machines (no internet)
+
+`start.sh` / `start.bat` bootstrap a venv, pip, and an npm build, which all need
+the internet. On an **offline** machine, use the stdlib-only launcher instead --
+it needs only Python 3.x and a prebuilt `frontend/dist/`:
+
+| Platform | Offline start |
+|----------|---------------|
+| Windows | double-click `start_offline.bat` (or `py serve_offline.py`) |
+| Linux / macOS | `./start_offline.sh` (or `python3 serve_offline.py`) |
+
+Copy the whole `config_gui/` folder (must include `frontend/dist/`). Serves on
+<http://localhost:8000>; pass `--port N` / `--no-browser` as needed.
+
 The first start automatically creates the Python virtual environment, installs
 all dependencies, builds the React app, then serves it on
 <http://localhost:8000> and opens your browser. Later starts skip setup and just
