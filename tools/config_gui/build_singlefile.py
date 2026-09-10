@@ -6,11 +6,15 @@ by double-click in any modern browser -- no Python, no server, no separate
 assets, nothing to copy wrong. Metadata is embedded (window.__ECAT_META__) and
 Save/Load use the browser's download / file-picker (see frontend/src/api.js).
 
+Also emits ethercat_config_builder.html.txt, a base64 twin for crossing security
+bridges that strip <script> blocks from .html files; restore_html.py rebuilds it.
+
 Run after `npm run build`:
     python3 build_singlefile.py
 """
 
 import base64
+import hashlib
 import json
 import os
 import re
@@ -19,6 +23,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 DIST = os.path.join(HERE, "frontend", "dist")
 OUT = os.path.join(HERE, "ethercat_config_builder.html")
+OUT_TXT = os.path.join(HERE, "ethercat_config_builder.html.txt")
 
 sys.path.insert(0, os.path.join(HERE, "backend"))
 import meta as M  # noqa: E402
@@ -85,6 +90,17 @@ def main():
     with open(OUT, "w", encoding="utf-8") as fh:
         fh.write(html)
     print("wrote %s (%d KB)" % (OUT, (os.path.getsize(OUT) + 1023) // 1024))
+
+    # Security bridges/content filters strip <script> blocks out of .html files.
+    # Base64 text survives the crossing; restore_html.py rebuilds it on the far side.
+    raw = html.encode("utf-8")
+    text = base64.b64encode(raw).decode("ascii")
+    lines = [text[i:i + 76] for i in range(0, len(text), 76)]
+    with open(OUT_TXT, "w", encoding="ascii", newline="\n") as fh:
+        fh.write("\n".join(lines) + "\n")
+    print("wrote %s (%d KB)" % (OUT_TXT, (os.path.getsize(OUT_TXT) + 1023) // 1024))
+    print("  bytes  : %d" % len(raw))
+    print("  sha256 : %s" % hashlib.sha256(raw).hexdigest())
 
 
 if __name__ == "__main__":
