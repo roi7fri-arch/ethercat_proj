@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EtherCAT Distributed Clocks — How the jitter gets so good</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --dim:#8b949e; --accent:#58a6ff; --accent2:#3fb950;
+    --warn:#f0883e; --bad:#f85149; --frame:#d2a8ff; --sync:#3fb950;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  header{padding:18px 24px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#161b22,#0d1117)}
+  header h1{margin:0 0 4px;font-size:20px}
+  header p{margin:0;color:var(--dim);font-size:13px;max-width:900px}
+  .wrap{display:grid;grid-template-columns:1fr 400px;gap:16px;padding:16px 24px;align-items:start}
+  @media(max-width:1100px){.wrap{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .card h2{margin:0;padding:10px 14px;font-size:14px;border-bottom:1px solid var(--line);background:var(--panel2);
+    display:flex;justify-content:space-between;align-items:center}
+  .card .body{padding:14px}
+  canvas{display:block;width:100%;height:auto;background:#0a0e14}
+  /* stepper */
+  .steps{display:flex;flex-wrap:wrap;gap:6px;padding:12px 24px 0}
+  .step{padding:6px 11px;border:1px solid var(--line);border-radius:20px;font-size:12px;color:var(--dim);
+    cursor:pointer;background:var(--panel);user-select:none;white-space:nowrap}
+  .step.active{border-color:var(--accent);color:var(--fg);background:#132033}
+  .step .n{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;
+    background:var(--line);color:var(--fg);margin-right:6px;font-size:11px}
+  .step.active .n{background:var(--accent);color:#04101f}
+  .controls{display:flex;gap:8px;align-items:center;padding:12px 24px;flex-wrap:wrap}
+  button{background:#21262d;color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:7px 14px;
+    font-size:13px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);color:#04101f;border-color:var(--accent);font-weight:600}
+  .desc{font-size:13.5px;line-height:1.6;color:var(--fg)}
+  .desc .k{color:var(--accent);font-weight:600}
+  .desc .g{color:var(--accent2)}
+  .math{font-family:var(--mono);font-size:13px;background:#0a0e14;border:1px solid var(--line);border-radius:8px;
+    padding:12px;margin-top:12px;line-height:1.7;overflow-x:auto}
+  .math .lbl{color:var(--dim)}
+  .math b{color:var(--frame)}
+  .math .res{color:var(--accent2);font-weight:700}
+  table.tt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin-top:10px}
+  table.tt th,table.tt td{border:1px solid var(--line);padding:5px 7px;text-align:right}
+  table.tt th{background:var(--panel2);color:var(--dim);font-weight:600;text-align:right}
+  table.tt td.name{text-align:left;color:var(--fg)}
+  .pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-family:var(--mono)}
+  .pill.ok{background:#0f2e1a;color:var(--accent2);border:1px solid #1c5c34}
+  .pill.warn{background:#3a2410;color:var(--warn);border:1px solid #6b3f14}
+  .slider{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .slider input{flex:1}
+  .kv{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12.5px;padding:3px 0;
+    border-bottom:1px dashed var(--line)}
+  .kv .v{color:var(--accent2)}
+  .note{font-size:12px;color:var(--dim);margin-top:10px;line-height:1.5}
+  code{font-family:var(--mono);background:#0a0e14;padding:1px 5px;border-radius:4px;color:var(--frame);font-size:12px}
+  .big{font-size:26px;font-weight:800;color:var(--accent2);font-family:var(--mono)}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1>EtherCAT Distributed Clocks — how it achieves sub-microsecond synchronization</h1>
+  <p>A worked, animated walk-through of the mechanism (following the ETG / Beckhoff “Distributed Clocks” figures).
+     The key idea: a slave does not act when the frame arrives — it acts when its own hardware clock reaches a
+     pre-agreed time. So communication jitter (µs) never becomes actuation jitter (ns). Below we measure delays,
+     align clocks, and fire SYNC0 together — with real numbers.</p>
+</header>
+
+<div class="steps" id="steps"></div>
+
+<div class="controls">
+  <button id="prev">◀ Prev</button>
+  <button id="playpause" class="primary">▶ Play</button>
+  <button id="next">Next ▶</button>
+  <button id="replay">↻ Replay phase</button>
+  <span id="phaseName" style="color:var(--dim);font-size:13px;margin-left:8px"></span>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <h2><span>Bus animation</span><span id="clockLabel" style="font-family:var(--mono);color:var(--dim)"></span></h2>
+    <div class="body" style="padding:0">
+      <canvas id="cv" width="900" height="440"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span id="panelTitle">Explanation</span></h2>
+    <div class="body">
+      <div class="desc" id="desc"></div>
+      <div id="mathZone"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   DISTRIBUTED CLOCKS — teachable physical model
+   Line topology: Master - S1(reference) - S2 - S3(end)
+   All times in nanoseconds. We track TRUE physical time of the frame's first
+   bit, and each slave's LOCAL clock = true time + a hidden per-slave offset.
+   The DC algorithm never sees "true time"; it only reads local timestamps.
+   ============================================================================ */
+
+// --- physical constants of the demo bus ---
+const P   = 300;              // ESC forwarding/processing delay per slave (ns)
+const C01 = 100;              // one-way cable delay S1<->S2 (ns)
+const C12 = 150;              // one-way cable delay S2<->S3 (ns)
+const C_M1= 80;               // one-way cable master<->S1 (ns)
+
+// hidden local-clock offsets (unknown to the algorithm) — proves offset-immunity
+const OFFSET = { 1:+1000, 2:+5000, 3:-3000 };
+
+// --- derive the true-time itinerary of the frame's first bit ---
+// Frame leaves master at true t = 0.
+const t_m_out      = 0;
+const t_s1_p0      = t_m_out + C_M1;              // S1 port0 receive (outbound)
+const t_s1_exit    = t_s1_p0 + P;                 // leaves S1 port1
+const t_s2_p0      = t_s1_exit + C01;             // S2 port0 receive (outbound)
+const t_s2_exit    = t_s2_p0 + P;                 // leaves S2 port1
+const t_s3_p0      = t_s2_exit + C12;             // S3 port0 receive (outbound)
+const t_s3_turn    = t_s3_p0 + P;                 // hairpin inside S3, heads back
+const t_s2_p1      = t_s3_turn + C12;             // S2 port1 receive (return)
+const t_s2_ret     = t_s2_p1 + P;
+const t_s1_p1      = t_s2_ret + C01;              // S1 port1 receive (return)
+const t_s1_ret     = t_s1_p1 + P;
+const t_m_back     = t_s1_ret + C_M1;             // back at master
+
+// The full physical waypoint list the animated dot follows (true time, x-lane)
+// lanes: y for outbound (top) vs return (bottom)
+// We'll map node x positions in draw.
+
+// --- local timestamps latched at each port (what the master actually reads) ---
+// receive time port0 = outbound arrival ; receive time port1 = return arrival
+const local = {
+  1:{ p0: t_s1_p0 + OFFSET[1], p1: t_s1_p1 + OFFSET[1] },
+  2:{ p0: t_s2_p0 + OFFSET[2], p1: t_s2_p1 + OFFSET[2] },
+  3:{ p0: t_s3_p0 + OFFSET[3], p1: null } // end slave: only one open port
+};
+// round-trip measured inside each slave's OWN clock (offset cancels)
+const RT = {
+  1: local[1].p1 - local[1].p0,       // = t_s1_p1 - t_s1_p0 (true) = 1700? computed live
+  2: local[2].p1 - local[2].p0,
+  3: 0                                 // no downstream open port
+};
+// propagation delay from reference (S1) via telescoping:  D_n = (RT1 - RTn)/2
+const D = { 1:0, 2:(RT[1]-RT[2])/2, 3:(RT[1]-RT[3])/2 };
+
+// ============================================================================
+//  Canvas geometry
+// ============================================================================
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+
+// node layout
+const NODE_Y = 150;
+const nodes = [
+  { id:'M',  label:'Master',      x:90,  ref:false },
+  { id:'S1', label:'Slave 1',     x:300, ref:true  },
+  { id:'S2', label:'Slave 2',     x:530, ref:false },
+  { id:'S3', label:'Slave 3 (end)',x:770, ref:false },
+];
+const NX = { M:90, S1:300, S2:530, S3:770 };
+const NODE_W = 96, NODE_H = 62;
+
+// map true-time waypoints to (x,y,laneUp) for the traveling dot
+// outbound lane slightly above the wire, return lane slightly below
+const LANE = 26;
+const wp = [
+  { t:t_m_out,   x:NX.M,  up:true,  ev:null },
+  { t:t_s1_p0,   x:NX.S1, up:true,  ev:{s:1,port:0} },
+  { t:t_s1_exit, x:NX.S1, up:true,  ev:null },
+  { t:t_s2_p0,   x:NX.S2, up:true,  ev:{s:2,port:0} },
+  { t:t_s2_exit, x:NX.S2, up:true,  ev:null },
+  { t:t_s3_p0,   x:NX.S3, up:true,  ev:{s:3,port:0} },
+  { t:t_s3_turn, x:NX.S3, up:false, ev:null },        // hairpin
+  { t:t_s2_p1,   x:NX.S2, up:false, ev:{s:2,port:1} },
+  { t:t_s2_ret,  x:NX.S2, up:false, ev:null },
+  { t:t_s1_p1,   x:NX.S1, up:false, ev:{s:1,port:1} },
+  { t:t_s1_ret,  x:NX.S1, up:false, ev:null },
+  { t:t_m_back,  x:NX.M,  up:false, ev:null },
+];
+const T_TOTAL = t_m_back;
+
+function frameXY(tt){
+  // clamp
+  if(tt<=wp[0].t) return {x:wp[0].x, y:NODE_Y-LANE};
+  if(tt>=wp[wp.length-1].t) return {x:wp[wp.length-1].x, y:NODE_Y+LANE};
+  for(let i=0;i<wp.length-1;i++){
+    const a=wp[i], b=wp[i+1];
+    if(tt>=a.t && tt<=b.t){
+      const f=(tt-a.t)/(b.t-a.t || 1);
+      const x=a.x+(b.x-a.x)*f;
+      const yUp = a.up ? NODE_Y-LANE : NODE_Y+LANE;
+      return {x, y:yUp};
+    }
+  }
+  return {x:wp[0].x,y:NODE_Y};
+}
+function latchedPortsAt(tt){
+  const set=[];
+  for(const w of wp){ if(w.ev && tt>=w.t) set.push(w.ev); }
+  return set;
+}
+
+// ============================================================================
+//  Phase / animation state machine
+// ============================================================================
+const PHASES = [
+  { key:'intro',   name:'0 · The problem' },
+  { key:'measure', name:'1 · Measure delays' },
+  { key:'compute', name:'2 · Compute delays' },
+  { key:'offset',  name:'3 · Align clocks' },
+  { key:'drift',   name:'4 · Drift control' },
+  { key:'sync',    name:'5 · SYNC0 & jitter' },
+  { key:'cable',   name:'6 · Cable length?' },
+];
+let phase = 0;
+let playing = false;
+let anim = 0;          // phase-local animation progress (0..1+), meaning varies per phase
+let lastTs = 0;
+let jitterUs = 3.0;    // phase 5 slider (µs of comms jitter)
+const CLK_JITTER_NS = 20; // residual DC lock jitter (ns), for the payoff number
+let cableLen = 20;     // phase 6 slider (metres of cable to the far slave)
+const PROP_NS_PER_M = 5;  // signal ~0.6c in copper -> ~5 ns per metre
+const ESC_FIXED_NS  = 300;// fixed ESC forwarding delay (constant, also measured)
+
+// per-phase nominal duration (seconds) for auto-advance of internal anim
+const PHASE_DUR = { intro:6, measure:7, compute:6, offset:6, drift:9, sync:9, cable:8 };
+
+// ============================================================================
+//  Drawing helpers
+// ============================================================================
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function drawWire(){
+  ctx.strokeStyle='#243040'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(NX.M, NODE_Y); ctx.lineTo(NX.S3, NODE_Y); ctx.stroke();
+}
+function drawNode(n, opts={}){
+  const x=n.x-NODE_W/2, y=NODE_Y-NODE_H/2;
+  ctx.save();
+  rr(x,y,NODE_W,NODE_H,10);
+  ctx.fillStyle = n.ref ? '#12261a' : '#141b26';
+  ctx.fill();
+  ctx.lineWidth=2;
+  ctx.strokeStyle = opts.hi ? '#58a6ff' : (n.ref ? '#2ea043' : '#30363d');
+  ctx.stroke();
+  ctx.fillStyle='#e6edf3'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(n.label, n.x, y+18);
+  if(n.ref){ ctx.fillStyle='#3fb950'; ctx.font='10px sans-serif'; ctx.fillText('◷ reference clock', n.x, y+33); }
+  ctx.restore();
+  return {x,y};
+}
+function drawClockChip(n, systemNs, opts={}){
+  // small digital clock under the node
+  const y=NODE_Y+NODE_H/2+10;
+  const w=110,h=30,x=n.x-w/2;
+  ctx.save();
+  rr(x,y,w,h,6);
+  ctx.fillStyle='#0a0e14'; ctx.fill();
+  ctx.strokeStyle= opts.locked ? '#2ea043' : (opts.warn ? '#6b3f14' : '#30363d');
+  ctx.lineWidth=1.5; ctx.stroke();
+  ctx.fillStyle= opts.locked ? '#3fb950' : (opts.warn ? '#f0883e' : '#8b949e');
+  ctx.font='bold 14px var(--mono),monospace'; ctx.textAlign='center';
+  ctx.fillText(fmt(systemNs), n.x, y+20);
+  ctx.restore();
+}
+function fmt(ns){
+  // show as .......ns with thousands sep, keep it compact
+  const v = Math.round(ns);
+  return v.toLocaleString('en-US')+' ns';
+}
+function drawFrame(tt){
+  const {x,y}=frameXY(tt);
+  ctx.save();
+  ctx.shadowColor='#d2a8ff'; ctx.shadowBlur=14;
+  ctx.fillStyle='#d2a8ff';
+  rr(x-14,y-8,28,16,4); ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.fillStyle='#1c1030'; ctx.font='bold 10px var(--mono),monospace'; ctx.textAlign='center';
+  ctx.fillText('FRM', x, y+3.5);
+  ctx.restore();
+}
+function drawLatch(ev){
+  const nx = ev.s===1?NX.S1:ev.s===2?NX.S2:NX.S3;
+  const yy = ev.port===0 ? NODE_Y-LANE : NODE_Y+LANE;
+  ctx.save();
+  ctx.fillStyle='#58a6ff';
+  ctx.beginPath(); ctx.arc(nx, yy, 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='#8b949e'; ctx.font='10px var(--mono),monospace'; ctx.textAlign='center';
+  const val = ev.port===0 ? local[ev.s].p0 : local[ev.s].p1;
+  ctx.fillText('P'+ev.port+' ⇦ '+Math.round(val), nx, ev.port===0? yy-10 : yy+16);
+  ctx.restore();
+}
+function title(txt){
+  ctx.save();
+  ctx.fillStyle='#8b949e'; ctx.font='12px sans-serif'; ctx.textAlign='left';
+  ctx.fillText(txt, 24, 28);
+  ctx.restore();
+}
+
+// ============================================================================
+//  Per-phase renderers
+// ============================================================================
+function render(){
+  ctx.clearRect(0,0,W,H);
+  const p = PHASES[phase].key;
+  if(p!=='offset' && p!=='drift') drawWire();   // clock-graph phases draw their own axes
+  if(p==='intro')   renderIntro();
+  else if(p==='measure') renderMeasure();
+  else if(p==='compute') renderCompute();
+  else if(p==='offset')  renderOffset();
+  else if(p==='drift')   renderDrift();
+  else if(p==='sync')    renderSync();
+  else if(p==='cable')   renderCable();
+}
+
+function renderIntro(){
+  title('Naïve idea: "everyone acts when the frame arrives" — jitter flows straight through');
+  // frame moving back and forth, showing different arrival times
+  const t = (anim % 1);
+  const tt = t*T_TOTAL;
+  nodes.forEach(n=>drawNode(n));
+  drawFrame(tt);
+  // annotate arrival times differ per slave
+  ctx.save();
+  ctx.font='11px var(--mono),monospace'; ctx.textAlign='center'; ctx.fillStyle='#f0883e';
+  ctx.fillText('arrives @ '+Math.round(t_s1_p0)+' ns', NX.S1, 250);
+  ctx.fillText('arrives @ '+Math.round(t_s2_p0)+' ns', NX.S2, 250);
+  ctx.fillText('arrives @ '+Math.round(t_s3_p0)+' ns', NX.S3, 250);
+  ctx.fillStyle='#8b949e'; ctx.font='12px sans-serif';
+  ctx.fillText('Different bus positions see the frame at different instants — and any send jitter adds directly.', W/2, 300);
+  ctx.fillStyle='#f85149'; ctx.font='bold 13px sans-serif';
+  ctx.fillText('Problem: comms jitter  →  actuation jitter. We need the slaves to share a clock instead.', W/2, 330);
+  ctx.restore();
+}
+
+function renderMeasure(){
+  title('Step 1 — one broadcast latches each ESC port\'s local receive-time as the frame passes (out & back)');
+  // frame travels the full itinerary once, latching timestamps
+  const t = Math.min(anim,1);
+  const tt = t*T_TOTAL;
+  nodes.forEach(n=>drawNode(n,{hi:false}));
+  // latched ports so far
+  latchedPortsAt(tt).forEach(drawLatch);
+  drawFrame(tt);
+  // legend
+  ctx.save();
+  ctx.fillStyle='#8b949e'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('top lane = outbound (Port 0 receive) · bottom lane = return (Port 1 receive)', 24, H-16);
+  ctx.restore();
+}
+
+function renderCompute(){
+  title('Step 2 — round-trip inside each slave (offset-immune) → telescoping gives clean one-way delays');
+  nodes.forEach(n=>drawNode(n));
+  // draw all latches
+  [{s:1,port:0},{s:1,port:1},{s:2,port:0},{s:2,port:1},{s:3,port:0}].forEach(drawLatch);
+  // draw delay brackets appearing
+  ctx.save();
+  ctx.font='12px var(--mono),monospace'; ctx.textAlign='center';
+  const showD2 = anim>0.33, showD3 = anim>0.66;
+  ctx.fillStyle='#3fb950';
+  if(showD2){
+    drawBracket(NX.S1,NX.S2,320,'D₂ = '+D[2]+' ns');
+  }
+  if(showD3){
+    drawBracket(NX.S1,NX.S3,360,'D₃ = '+D[3]+' ns');
+  }
+  ctx.restore();
+}
+function drawBracket(x1,x2,y,label){
+  ctx.save();
+  ctx.strokeStyle='#2ea043'; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(x1,y-6); ctx.lineTo(x1,y); ctx.lineTo(x2,y); ctx.lineTo(x2,y-6); ctx.stroke();
+  ctx.fillStyle='#3fb950'; ctx.font='12px var(--mono),monospace'; ctx.textAlign='center';
+  ctx.fillText(label,(x1+x2)/2, y+16);
+  ctx.restore();
+}
+
+function renderOffset(){
+  title('Step 3 — Offset compensation: shift the slave clock so it reads the reference System Time (+ its delay)');
+  const a = Math.min(anim,1);
+  // clock-vs-clock plot: x = reference System Time, y = slave local time.
+  // slope stays ~1 here; we animate the vertical intercept (the offset) toward the target (+D).
+  const startIC = 0.30, endIC = 0.055;      // intercept as fraction of axis span
+  const ic = startIC + (endIC-startIC)*a;
+  drawClockGraph(ic, 1.0, {
+    color:'#58a6ff', lineLabel:'slave clock',
+    annOffset:true, offsetFromIC:ic, offsetToIC:endIC,
+    caption: a>0.98
+      ? 'Intercept aligned — slave System Time = reference System Time + propagation delay Dₙ.'
+      : 'Writing System-Time-Offset (reg 0x0920): the whole line slides down until it matches the reference.'
+  });
+}
+
+function renderDrift(){
+  title('Step 4 — Drift compensation: the time-control loop trims the slave clock RATE (the slope) each cycle');
+  // slope error decays across resync cycles; ARMW sweeps at each cycle start.
+  const cycles = 3;
+  const f = (anim*cycles) % 1;
+  const idx = Math.floor(anim*cycles);
+  const slopeErr = 0.26 * Math.pow(0.45, idx) * (1 - f*0.55); // rate error shrinking
+  const slope = 1 + slopeErr;
+  drawClockGraph(0.055, slope, {
+    color: slopeErr>0.03 ? '#f0883e' : '#3fb950',
+    lineLabel: slopeErr>0.03 ? 'slave clock (rate off)' : 'slave clock (locked)',
+    annDrift:true, slope,
+    caption:'ARMW/FRMW carries the reference time to every slave; each ESC nudges its own tick rate so the slope → 45°.'
+  });
+  // ARMW datagram sweeping across a mini bus strip under the graph
+  const sx=150, sy=352, sw=600;
+  ctx.save();
+  ctx.strokeStyle='#243040'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx+sw,sy); ctx.stroke();
+  ['S1 (ref)','S2','S3'].forEach((lab,i)=>{
+    const x = sx + sw*(0.08 + i*0.42);
+    ctx.fillStyle = i===0?'#12261a':'#141b26';
+    rr(x-30,sy-12,60,24,5); ctx.fill();
+    ctx.strokeStyle=i===0?'#2ea043':'#30363d'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='#e6edf3'; ctx.font='11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(lab, x, sy+4);
+  });
+  if(f<0.2){
+    const g=f/0.2; const x=sx + sw*(0.08) + (sw*0.84)*g;
+    ctx.fillStyle='#58a6ff'; ctx.shadowColor='#58a6ff'; ctx.shadowBlur=10;
+    rr(x-20,sy-9,40,18,4); ctx.fill(); ctx.shadowBlur=0;
+    ctx.fillStyle='#04101f'; ctx.font='bold 9px var(--mono),monospace'; ctx.textAlign='center';
+    ctx.fillText('ARMW', x, sy+4);
+  }
+  ctx.restore();
+}
+
+// Reference-vs-slave clock plot (from the Beckhoff "System Time / Local time" figure):
+//   x-axis = reference System Time, y-axis = slave local time.
+//   perfect sync = the 45° line. Offset = vertical intercept; drift = slope.
+function drawClockGraph(interceptFrac, slope, opts={}){
+  const gx=150, gy=64, gw=600, gh=252;
+  const ox=gx+46, oy=gy+gh-42;      // origin (bottom-left)
+  const axW=gw-70, axH=gh-56;
+  const S = Math.min(axW,axH);
+  ctx.save();
+  // axes
+  ctx.strokeStyle='#3d4a5c'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+axW,oy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox,oy-axH); ctx.stroke();
+  ctx.fillStyle='#8b949e'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('Reference Clock — System Time  →', ox+axW/2, oy+24);
+  ctx.save(); ctx.translate(ox-28, oy-axH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('Slave — local time  →', 0, 0); ctx.restore();
+  // ideal 45° line
+  ctx.strokeStyle='#2ea043'; ctx.setLineDash([5,4]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+S,oy-S); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#3fb950'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('perfect sync (slope 1, offset 0)', ox+S*0.36, oy-S*0.36-8);
+  // slave line: y = slope*t + intercept  (t in 0..1 over span S)
+  const p0y = oy - (interceptFrac)*S;
+  const p1y = oy - (slope*1 + interceptFrac)*S;
+  // clip within plot
+  ctx.save();
+  ctx.beginPath(); ctx.rect(ox, oy-axH, axW, axH); ctx.clip();
+  ctx.strokeStyle=opts.color||'#58a6ff'; ctx.lineWidth=2.6;
+  ctx.beginPath(); ctx.moveTo(ox, p0y); ctx.lineTo(ox+S, p1y); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle=opts.color||'#58a6ff'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+  ctx.fillText(opts.lineLabel||'slave clock', ox+S+6, Math.max(oy-axH+10, Math.min(oy-6, p1y)));
+  // annotation: offset compensation (vertical arrow near origin)
+  if(opts.annOffset){
+    const ax=ox+S*0.16;
+    const yIdeal = oy - (S*0.16);
+    const ySlave = oy - (1*0.16 + opts.offsetFromIC)*S;
+    ctx.strokeStyle='#f0883e'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(ax, yIdeal); ctx.lineTo(ax, ySlave); ctx.stroke();
+    arrowHead(ax, ySlave, ySlave>yIdeal?1:-1);
+    arrowHead(ax, yIdeal, yIdeal>ySlave?1:-1);
+    ctx.fillStyle='#f0883e'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+    ctx.fillText('offset compensation', ax+8, (yIdeal+ySlave)/2);
+    // propagation-delay note at bottom (the small residual +D)
+    ctx.fillStyle='#8b949e';
+    ctx.fillText('final intercept = +Dₙ (propagation-delay compensation)', ox+8, oy-8);
+  }
+  if(opts.annDrift){
+    ctx.fillStyle='#f0883e'; ctx.font='11px sans-serif'; ctx.textAlign='right';
+    const slErr=(opts.slope-1);
+    ctx.fillText('slope error = rate drift = '+(slErr*100).toFixed(1)+' %', ox+S-6, oy-S+2);
+  }
+  // caption
+  if(opts.caption){
+    ctx.fillStyle = (opts.color==='#3fb950')?'#3fb950':'#8b949e';
+    ctx.font='12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(opts.caption, W/2, gy+gh+ (opts.annDrift?58:6));
+  }
+  ctx.restore();
+}
+function arrowHead(x,y,dir){
+  ctx.save(); ctx.fillStyle=ctx.strokeStyle;
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-4,y-dir*7); ctx.lineTo(x+4,y-dir*7);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+
+function renderSync(){
+  title('Step 5 — SYNC0 fires on the LOCAL synced clock. Frame just has to arrive first — jitter is absorbed.');
+  nodes.forEach(n=>drawNode(n));
+  // timeline band at bottom
+  const bx=60, by=300, bw=W-120, bh=90;
+  ctx.save();
+  rr(bx,by,bw,bh,8); ctx.fillStyle='#0a0e14'; ctx.fill();
+  ctx.strokeStyle='#30363d'; ctx.stroke();
+  // cycle marks
+  const cycT = 1.0; // one animated cycle
+  const t = anim % 1;
+  // SYNC0 fixed instant within the cycle
+  const syncFrac = 0.72;
+  // frame arrival = syncFrac - margin ± jitter
+  const jitterFrac = (jitterUs/1000)/1.0 * 6; // exaggerate for visibility
+  const nominalArrive = syncFrac - 0.28;
+  const jit = Math.sin(anim*13.0)*jitterFrac; // wobbling arrival
+  const arriveFrac = Math.max(0.04, nominalArrive + jit);
+  // draw axis
+  ctx.strokeStyle='#243040'; ctx.beginPath();
+  ctx.moveTo(bx+10,by+bh-24); ctx.lineTo(bx+bw-10,by+bh-24); ctx.stroke();
+  const X = f=> bx+12 + (bw-24)*f;
+  // SYNC0 line (fixed)
+  ctx.strokeStyle='#3fb950'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(X(syncFrac),by+14); ctx.lineTo(X(syncFrac),by+bh-24); ctx.stroke();
+  ctx.fillStyle='#3fb950'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('SYNC0 (fixed on clock)', X(syncFrac), by+11);
+  // frame arrival marker (jittering)
+  ctx.strokeStyle='#f0883e'; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(X(arriveFrac),by+20); ctx.lineTo(X(arriveFrac),by+bh-24); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#f0883e'; ctx.font='11px sans-serif';
+  ctx.fillText('frame arrival (jitters ±'+jitterUs.toFixed(1)+' µs)', X(arriveFrac), by+bh-8);
+  // margin bracket
+  ctx.strokeStyle='#8b949e';
+  ctx.beginPath(); ctx.moveTo(X(arriveFrac),by+bh-30); ctx.lineTo(X(syncFrac),by+bh-30); ctx.stroke();
+  ctx.fillStyle= arriveFrac<syncFrac ? '#8b949e':'#f85149';
+  ctx.font='10px sans-serif';
+  ctx.fillText(arriveFrac<syncFrac?'safety margin':'LATE! missed cycle', (X(arriveFrac)+X(syncFrac))/2, by+bh-33);
+
+  // when playhead crosses SYNC0, flash all slaves acting together
+  const acting = Math.abs(t - syncFrac) < 0.03;
+  ctx.restore();
+  if(acting){
+    [nodes[1],nodes[2],nodes[3]].forEach(n=>{
+      ctx.save();
+      ctx.strokeStyle='#3fb950'; ctx.lineWidth=3; ctx.shadowColor='#3fb950'; ctx.shadowBlur=18;
+      rr(n.x-NODE_W/2-4,NODE_Y-NODE_H/2-4,NODE_W+8,NODE_H+8,12); ctx.stroke();
+      ctx.restore();
+    });
+    ctx.save(); ctx.fillStyle='#3fb950'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('⚡ all outputs applied simultaneously', W/2, 250); ctx.restore();
+  }
+  // playhead
+  ctx.save();
+  ctx.strokeStyle='#d2a8ff'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(X(t),by+14); ctx.lineTo(X(t),by+bh-24); ctx.stroke();
+  ctx.restore();
+}
+
+function renderCable(){
+  title('Cable adds LATENCY, not JITTER — DC measures the latency once and presets the clock ahead by exactly that much');
+  // two nodes: reference on left, far slave on right, with a variable cable between
+  const refN = { label:'Reference (S1)', x:170, ref:true };
+  const farN = { label:'Far slave', x:720, ref:false };
+  drawNode(refN,{}); drawNode(farN,{});
+  // measured one-way cable delay for current length
+  const Dcable = Math.round(cableLen*PROP_NS_PER_M + ESC_FIXED_NS);
+
+  // draw the cable as a coil whose turns scale with length (visual "more cable")
+  const x0=refN.x+NODE_W/2, x1=farN.x-NODE_W/2, span=x1-x0;
+  const turns = Math.max(2, Math.round(cableLen/3));
+  ctx.save();
+  ctx.strokeStyle='#3d4a5c'; ctx.lineWidth=3; ctx.beginPath();
+  const t = anim; // packet progress 0..1 along the cable
+  for(let i=0;i<=span;i++){
+    const fx=i/span;
+    const yy=NODE_Y + Math.sin(fx*turns*Math.PI*2)*10;
+    if(i===0) ctx.moveTo(x0+i,yy); else ctx.lineTo(x0+i,yy);
+  }
+  ctx.stroke();
+  // length label
+  ctx.fillStyle='#8b949e'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('cable length L = '+cableLen+' m', (x0+x1)/2, NODE_Y-26);
+  // a packet traveling the cable — takes visibly longer for longer cable (latency)
+  const pf = (t* (1/ (0.4+cableLen/120))) % 1; // longer cable -> slower crossing
+  const px = x0 + span*pf;
+  const py = NODE_Y + Math.sin(pf*turns*Math.PI*2)*10;
+  ctx.fillStyle='#d2a8ff'; ctx.shadowColor='#d2a8ff'; ctx.shadowBlur=10;
+  ctx.beginPath(); ctx.arc(px,py,7,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+  ctx.restore();
+
+  // clocks: BOTH read the same synced time — far slave's offset preset ahead by Dcable
+  const Tref = 500000;
+  drawClockChip(refN, Tref, {locked:true});
+  drawClockChip(farN, Tref, {locked:true});
+  ctx.save();
+  ctx.fillStyle='#3fb950'; ctx.font='11px var(--mono),monospace'; ctx.textAlign='center';
+  ctx.fillText('offset preset +'+Dcable+' ns ahead', farN.x, NODE_Y+NODE_H/2+58);
+  ctx.restore();
+
+  // bottom band: SYNC0 pulses of both slaves — perfectly aligned regardless of L
+  const bx=60, by=300, bw=W-120, bh=110;
+  ctx.save();
+  rr(bx,by,bw,bh,8); ctx.fillStyle='#0a0e14'; ctx.fill();
+  ctx.strokeStyle='#30363d'; ctx.stroke();
+  ctx.fillStyle='#8b949e'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('SYNC0 pulses (both slaves) — the two lines sit exactly on top of each other', bx+12, by+16);
+  const X = f=> bx+16 + (bw-32)*f;
+  // three SYNC0 instants
+  [0.28,0.6,0.92].forEach(f=>{
+    // reference pulse (green) and far pulse (blue) — offset by residual clock jitter only
+    ctx.strokeStyle='#3fb950'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(X(f),by+26); ctx.lineTo(X(f),by+bh-28); ctx.stroke();
+    // far slave pulse: same instant, tiny residual jitter (independent of L)
+    const jitterPx = (Math.sin((f*97+anim*7))* (CLK_JITTER_NS/8)); // tiny, L-independent
+    ctx.strokeStyle='#58a6ff'; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(X(f)+jitterPx,by+26); ctx.lineTo(X(f)+jitterPx,by+bh-28); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+  // legend
+  ctx.fillStyle='#3fb950'; ctx.fillRect(bx+bw-230, by+bh-18, 14, 3);
+  ctx.fillStyle='#8b949e'; ctx.font='10px sans-serif'; ctx.fillText('reference SYNC0', bx+bw-212, by+bh-14);
+  ctx.fillStyle='#58a6ff'; ctx.fillRect(bx+bw-110, by+bh-18, 14, 3);
+  ctx.fillStyle='#8b949e'; ctx.fillText('far slave SYNC0', bx+bw-92, by+bh-14);
+  // readout: cable delay grows, sync error flat
+  ctx.font='12px var(--mono),monospace'; ctx.textAlign='left';
+  ctx.fillStyle='#f0883e'; ctx.fillText('one-way cable delay  D(L) = '+Dcable+' ns  (grows with L)', bx+12, by+bh-40);
+  ctx.fillStyle='#3fb950'; ctx.fillText('sync error between slaves \u2248 \u00b1'+CLK_JITTER_NS+' ns  (FLAT \u2014 unchanged by L)', bx+12, by+bh-24);
+  ctx.restore();
+}
+
+// ============================================================================
+//  Side panel content per phase
+// ============================================================================
+const descEl = document.getElementById('desc');
+const mathEl = document.getElementById('mathZone');
+const panelTitle = document.getElementById('panelTitle');
+
+function updatePanel(){
+  const p = PHASES[phase].key;
+  if(p==='intro'){
+    panelTitle.textContent='Why “act on frame arrival” is not enough';
+    descEl.innerHTML = `On a standard fieldbus, a slave acts <span class="k">when the message arrives</span>.
+      Two things then ruin timing:
+      <br>• slaves at different bus positions see the frame at <span class="k">different instants</span>,
+      <br>• any <span class="k">send jitter</span> from the master's OS/network stack is passed straight through to the actuator.
+      <br><br>Distributed Clocks removes both. Each slave gets a <span class="g">hardware clock</span> locked to a common
+      reference, and fires its own <code>SYNC0</code> interrupt from <span class="g">that clock</span> — not from frame arrival.
+      The master then only has to get the frame there <span class="g">early enough</span>.`;
+    mathEl.innerHTML = `<div class="math">
+      <div class="lbl">Goal of the whole scheme:</div>
+      make every slave's 64-bit clock agree to <b>&lt; 1 µs</b>, unit <b>1 ns</b>, epoch 2000-01-01.<br>
+      Then actuation&nbsp;jitter = <span class="res">clock jitter (ns)</span>, not comms&nbsp;jitter (µs).
+      </div>`;
+  }
+  else if(p==='measure'){
+    panelTitle.textContent='Step 1 — latch the receive times';
+    descEl.innerHTML = `The master sends <span class="k">one broadcast</span> (a write to reg <code>0x0900</code>).
+      As the frame's first bit passes, <span class="g">every ESC latches its local counter</span> into its
+      <b>Receive Time Port</b> registers — Port 0 on the way out, Port 1 on the way back (the ring makes the frame
+      pass each node twice).
+      <br><br>Crucially each slave's clock is <span class="k">free-running with an unknown offset</span>. Watch the
+      latched values below — they look inconsistent because of those hidden offsets.`;
+    mathEl.innerHTML = `
+      <table class="tt">
+        <tr><th class="name">port receive (local)</th><th>Slave 1</th><th>Slave 2</th><th>Slave 3</th></tr>
+        <tr><td class="name">Port 0 (outbound)</td><td>${Math.round(local[1].p0)}</td><td>${Math.round(local[2].p0)}</td><td>${Math.round(local[3].p0)}</td></tr>
+        <tr><td class="name">Port 1 (return)</td><td>${Math.round(local[1].p1)}</td><td>${Math.round(local[2].p1)}</td><td>—</td></tr>
+        <tr><td class="name">hidden offset</td><td>${OFFSET[1]>0?'+':''}${OFFSET[1]}</td><td>${OFFSET[2]>0?'+':''}${OFFSET[2]}</td><td>${OFFSET[3]}</td></tr>
+      </table>
+      <div class="note">The algorithm never sees the offsets — yet it will cancel them in the next step.</div>`;
+  }
+  else if(p==='compute'){
+    panelTitle.textContent='Step 2 — the propagation-delay math';
+    descEl.innerHTML = `For each slave, subtract its two <span class="k">own-clock</span> receive-time stamps
+      (Receive Time Port 0/1) to get the <b>round-trip</b> to everything downstream. Because it is a difference of the
+      <span class="g">same clock</span>, the unknown offset <span class="g">cancels exactly</span>. This is the ETG
+      formula <code>t_CD = (t_C1 − t_C0)/2</code>, generalised down the line.`;
+    mathEl.innerHTML = `<div class="math">
+      <div class="lbl">Receive-time round-trip inside each slave (offset cancels):</div>
+      RTₓ = t<sub>x1</sub> − t<sub>x0</sub>&nbsp; <span class="lbl">(Port 1 − Port 0 receive time)</span><br>
+      RT₁ = ${Math.round(local[1].p1)} − ${Math.round(local[1].p0)} = <b>${RT[1]}</b> ns<br>
+      RT₂ = ${Math.round(local[2].p1)} − ${Math.round(local[2].p0)} = <b>${RT[2]}</b> ns<br>
+      RT₃ = <b>0</b> ns <span class="lbl">(end slave, no open downstream port)</span><br>
+      <br>
+      <div class="lbl">One-way delay from the reference (slave A/S1) — telescoping sum:</div>
+      Dₙ = ½ (RT₁ − RTₙ)<br>
+      D₂ = ½(${RT[1]} − ${RT[2]}) = <span class="res">${D[2]} ns</span><br>
+      D₃ = ½(${RT[1]} − ${RT[3]}) = <span class="res">${D[3]} ns</span>
+      </div>
+      <div class="note">Check against the true bus: S1→S2 = t<sub>p</sub>+cable = ${P}+${C01} = <b>${P+C01}</b> ns ✓ ;
+      S1→S3 = ${P}+${C01}+${P}+${C12} = <b>${P+C01+P+C12}</b> ns ✓. The formula recovers the physics exactly.</div>
+      <div class="note">Exact ETG form for a middle node also adds <b>t<sub>Diff</sub> = t<sub>p</sub> − t<sub>f</sub></b>
+      (processing- vs forwarding-path asymmetry inside the ESC):
+      t<sub>BC</sub> = ((t<sub>B1</sub>−t<sub>B0</sub>) − (t<sub>C1</sub>−t<sub>C0</sub>) + t<sub>Diff</sub>) / 2.
+      We fold t<sub>Diff</sub> into t<sub>p</sub> here for clarity; the ESI supplies it per device.</div>`;
+  }
+  else if(p==='offset'){
+    panelTitle.textContent='Step 3 — offset compensation (align the intercept)';
+    descEl.innerHTML = `Plot the slave's local time against the reference System Time: perfect sync is the
+      <span class="g">45° line</span>. Right now the slave's line is <span class="k">shifted up</span> — that vertical gap
+      is its clock offset. The master writes a <b>System Time Offset</b> (reg <code>0x0920</code>) that
+      <span class="g">slides the whole line down</span> onto the reference, leaving only the small <b>+Dₙ</b> for propagation
+      delay (reg <code>0x0928</code>).`;
+    mathEl.innerHTML = `<div class="math">
+      <div class="lbl">Offset written so local system time matches reference:</div>
+      Offsetₙ = T_ref − T_localₙ + Dₙ<br><br>
+      <div class="lbl">Result — every corrected clock reads:</div>
+      T_sysₙ = T_localₙ + Offsetₙ = <span class="res">T_ref + Dₙ</span><br>
+      <br>
+      Slave 1: T_ref + 0<br>
+      Slave 2: T_ref + ${D[2]} ns<br>
+      Slave 3: T_ref + ${D[3]} ns
+      </div>
+      <div class="note">The small +Dₙ term means "the reference time you just received is Dₙ old" — it is added back
+      during every drift-compensation pass so the comparison is fair.</div>`;
+  }
+  else if(p==='drift'){
+    panelTitle.textContent='Step 4 — drift compensation (correct the slope)';
+    descEl.innerHTML = `The intercept is fixed, but the two crystals tick at slightly different <span class="k">rates</span>,
+      so on the same plot the slave's line has the <span class="k">wrong slope</span> and slowly walks off the 45° line.
+      Every cycle the master sends <span class="g">one</span> <code>ARMW/FRMW</code> datagram that reads the reference clock and
+      writes it into all slaves in the same pass; each ESC's <b>time-control loop</b> trims its own tick rate until the
+      slope is back to 1.`;
+    mathEl.innerHTML = `<div class="math">
+      <div class="lbl">Per-slave error the ESC servo minimises:</div>
+      Δₙ = T_localₙ − (T_ref_received + Dₙ)<br><br>
+      <div class="lbl">Clock-rate correction (P-type, in hardware):</div>
+      rateₙ ← rateₙ − Kₚ · Δₙ&nbsp;&nbsp; ⇒ &nbsp; Δₙ → 0<br>
+      <br>
+      Monitor reg <code>0x092C</code> (System Time Difference).<br>
+      Locked target: <span class="res">|Δₙ| ≪ 1 µs</span> (typically tens of ns).
+      </div>
+      <div class="note">One datagram disciplines the entire bus each cycle — O(1) traffic regardless of slave count.</div>`;
+  }
+  else if(p==='sync'){
+    panelTitle.textContent='Step 5 — why the jitter is so good';
+    const commsNs = jitterUs*1000;
+    const factor = Math.max(1, Math.round(commsNs/CLK_JITTER_NS));
+    descEl.innerHTML = `Each slave fires <code>SYNC0</code> when its <span class="g">own synced clock</span> reaches a
+      pre-programmed compare value — <span class="k">not</span> when the frame arrives. So the frame can wobble by several
+      µs; as long as it lands <span class="g">before</span> SYNC0, the outputs still apply at the <span class="g">exact same
+      instant</span> on every axis. Drag the slider and watch the margin shrink but the SYNC0 line never move.`;
+    mathEl.innerHTML = `
+      <div class="slider">
+        <span style="color:var(--dim);font-size:12px">Comms jitter</span>
+        <input id="jit" type="range" min="0.2" max="9" step="0.1" value="${jitterUs}">
+        <span style="font-family:var(--mono);color:var(--warn)">${jitterUs.toFixed(1)} µs</span>
+      </div>
+      <div class="math" style="margin-top:12px">
+      <div class="lbl">SYNC0 fires when:</div>
+      T_sysₙ = T_start + k · T_cycle&nbsp; (same on every slave)<br><br>
+      <div class="kv"><span>Comms (frame) jitter</span><span class="v">±${(jitterUs).toFixed(1)} µs = ${commsNs.toFixed(0)} ns</span></div>
+      <div class="kv"><span>Residual DC clock jitter</span><span class="v">±${CLK_JITTER_NS} ns</span></div>
+      <div class="kv"><span>Actuation jitter (what the axis sees)</span><span class="v">±${CLK_JITTER_NS} ns</span></div>
+      </div>
+      <div style="text-align:center;margin-top:12px">
+        <div style="color:var(--dim);font-size:12px">jitter rejection</div>
+        <div class="big">${factor}×</div>
+        <div style="color:var(--dim);font-size:11px">comms jitter ÷ clock jitter = ${commsNs.toFixed(0)} / ${CLK_JITTER_NS}</div>
+      </div>
+      <div class="note">Condition to keep working: frame must always arrive before SYNC0, i.e.
+      <code>t_send_max + D_max &lt; SYNC0 shift</code>. Tune the SYNC0 shift for margin — accuracy is unaffected.</div>`;
+    // wire slider
+    const jitEl = document.getElementById('jit');
+    if(jitEl){
+      jitEl.addEventListener('input', e=>{
+        jitterUs = parseFloat(e.target.value);
+        updatePanel(); // refresh numbers
+      });
+    }
+  }
+  else if(p==='cable'){
+    panelTitle.textContent='The cable-length objection — answered';
+    const Dcable = Math.round(cableLen*PROP_NS_PER_M + ESC_FIXED_NS);
+    const D1 = Math.round(1*PROP_NS_PER_M + ESC_FIXED_NS);
+    const D100 = Math.round(100*PROP_NS_PER_M + ESC_FIXED_NS);
+    descEl.innerHTML = `It is <span class="g">true</span> that a longer cable <span class="k">does</span> add delay
+      (~5 ns per metre). But that is <b>latency</b> — a <span class="g">fixed, repeatable</span> number — not <b>jitter</b>.
+      Synchronisation quality depends on jitter, not latency.
+      <br><br>DC <span class="g">measures</span> each slave's cable delay once (Step 1–2) and writes it into the
+      System-Time-Offset, so the far slave's clock is <span class="g">preset ahead by exactly that delay</span>. Add 100 m
+      of cable and D grows — but the offset grows with it, so both SYNC0 pulses still fire at the <span class="g">same
+      absolute instant</span>. Drag the length slider: the cable delay changes, the sync error does not.`;
+    mathEl.innerHTML = `
+      <div class="slider">
+        <span style="color:var(--dim);font-size:12px">Cable length</span>
+        <input id="cab" type="range" min="1" max="100" step="1" value="${cableLen}">
+        <span style="font-family:var(--mono);color:var(--warn)">${cableLen} m</span>
+      </div>
+      <div class="math" style="margin-top:12px">
+      <div class="lbl">Signal speed in copper ≈ 0.6c ≈ 2×10⁸ m/s → ~5 ns/m</div>
+      D(L) = L × 5 ns/m + ESC forwarding<br>
+      D(${cableLen} m) = ${cableLen}×5 + ${ESC_FIXED_NS} = <b>${Dcable} ns</b><br><br>
+      <div class="lbl">Offset absorbs it — clock preset ahead:</div>
+      Offsetₙ = T_ref − T_localₙ + <b>D(L)</b><br>
+      ⇒ far slave's SYNC0 fires at T_ref, same as reference.<br>
+      <br>
+      <div class="kv"><span>D at 1 m</span><span class="v">${D1} ns</span></div>
+      <div class="kv"><span>D at 100 m</span><span class="v">${D100} ns</span></div>
+      <div class="kv"><span>Sync error (both cases)</span><span class="v">±${CLK_JITTER_NS} ns</span></div>
+      </div>
+      <div style="text-align:center;margin-top:12px">
+        <div style="color:var(--dim);font-size:12px">latency changes by</div>
+        <div class="big" style="color:var(--warn)">${(D100-D1)} ns</div>
+        <div style="color:var(--dim);font-size:11px">but sync error stays at ±${CLK_JITTER_NS} ns — <b>independent of length</b></div>
+      </div>
+      <div class="note"><b>Latency ≠ jitter.</b> A fixed 500 ns delay is measured and cancelled. What would hurt is
+      <i>variation</i> in that delay — and a passive cable's propagation time doesn't vary. Only requirement:
+      the frame still arrives before SYNC0 (keep <code>D_max &lt; SYNC0 shift</code>), which just sets how early
+      the master must send — not the accuracy.</div>`;
+    const cabEl = document.getElementById('cab');
+    if(cabEl){
+      cabEl.addEventListener('input', e=>{
+        cableLen = parseInt(e.target.value,10);
+        updatePanel();
+      });
+    }
+  }
+  document.getElementById('phaseName').textContent = PHASES[phase].name;
+}
+
+// ============================================================================
+//  Loop
+// ============================================================================
+function tick(ts){
+  if(!lastTs) lastTs=ts;
+  const dt=(ts-lastTs)/1000; lastTs=ts;
+  if(playing){
+    const dur = PHASE_DUR[PHASES[phase].key] || 6;
+    anim += dt/dur;
+    if(PHASES[phase].key==='intro' || PHASES[phase].key==='sync' || PHASES[phase].key==='drift' || PHASES[phase].key==='cable'){
+      // looping phases
+      if(anim>1) anim = anim%1;
+    } else {
+      if(anim>=1){ anim=1; }
+    }
+  }
+  render();
+  requestAnimationFrame(tick);
+}
+
+// ============================================================================
+//  Controls / stepper
+// ============================================================================
+const stepsEl=document.getElementById('steps');
+PHASES.forEach((ph,i)=>{
+  const d=document.createElement('div');
+  d.className='step'+(i===0?' active':'');
+  d.innerHTML='<span class="n">'+i+'</span>'+ph.name.replace(/^\d+\s·\s/,'');
+  d.onclick=()=>gotoPhase(i);
+  stepsEl.appendChild(d);
+});
+function refreshSteps(){
+  [...stepsEl.children].forEach((c,i)=>c.classList.toggle('active',i===phase));
+}
+function gotoPhase(i){
+  phase=Math.max(0,Math.min(PHASES.length-1,i));
+  anim=0; refreshSteps(); updatePanel();
+}
+document.getElementById('prev').onclick=()=>gotoPhase(phase-1);
+document.getElementById('next').onclick=()=>gotoPhase(phase+1);
+document.getElementById('replay').onclick=()=>{anim=0;};
+const ppBtn=document.getElementById('playpause');
+ppBtn.onclick=()=>{ playing=!playing; ppBtn.textContent=playing?'⏸ Pause':'▶ Play'; };
+
+// keyboard
+window.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') gotoPhase(phase+1);
+  else if(e.key==='ArrowLeft') gotoPhase(phase-1);
+  else if(e.key===' '){ e.preventDefault(); ppBtn.click(); }
+});
+
+// go
+updatePanel();
+playing=true; ppBtn.textContent='⏸ Pause';
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

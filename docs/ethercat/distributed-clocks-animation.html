@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EtherCAT Distributed Clocks — simple, slow walkthrough</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --dim:#8b949e; --accent:#58a6ff; --good:#3fb950; --warn:#f0883e; --bad:#f85149;
+    --frame:#d2a8ff; --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  /* whole page is one non-scrolling flex column that always fits the viewport */
+  body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  header{flex:0 0 auto;padding:10px 24px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#161b22,#0d1117)}
+  header h1{margin:0 0 3px;font-size:18px}
+  header p{margin:0;color:var(--dim);font-size:12.5px;max-width:960px;line-height:1.4}
+  .stagebar{flex:0 0 auto;display:flex;gap:10px;padding:10px 24px 0;flex-wrap:wrap}
+  .stage{flex:1;min-width:220px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);
+    cursor:pointer;transition:border-color .2s,background .2s}
+  .stage.active{border-color:var(--accent);background:#132033}
+  .stage .num{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:50%;
+    background:var(--line);color:var(--fg);font-size:12px;margin-right:8px;font-weight:700}
+  .stage.active .num{background:var(--accent);color:#04101f}
+  .stage .t{font-size:13px;font-weight:600}
+  .stage .s{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.35}
+  .controls{flex:0 0 auto;display:flex;gap:10px;align-items:center;padding:10px 24px;flex-wrap:wrap}
+  button{background:#21262d;color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:7px 14px;
+    font-size:13px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);color:#04101f;border-color:var(--accent);font-weight:600}
+  .speed{display:flex;gap:5px;align-items:center;margin-left:6px}
+  .speed span{color:var(--dim);font-size:12px;margin-right:2px}
+  .speed button.sel{background:var(--accent);color:#04101f;border-color:var(--accent);font-weight:600}
+  /* takes all remaining vertical space; canvas shrinks so the caption is always visible */
+  .stagewrap{flex:1 1 auto;min-height:0;display:flex;padding:0 24px 10px}
+  .card{flex:1;display:flex;flex-direction:column;min-height:0;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  canvas{flex:1 1 auto;min-height:0;display:block;width:100%;height:100%;object-fit:contain;background:#0a0e14}
+  .caption{flex:0 0 auto;padding:12px 22px;border-top:1px solid var(--line);background:var(--panel2)}
+  .caption .big{font-size:15px;line-height:1.5}
+  .caption .big b{color:var(--accent)}
+  .caption .big .g{color:var(--good)}
+  .caption .big .w{color:var(--warn)}
+  .caption .sub{margin-top:6px;font-size:12px;color:var(--dim);line-height:1.45}
+  code{font-family:var(--mono);background:#0a0e14;padding:1px 5px;border-radius:4px;color:var(--frame);font-size:12px}
+  .foot{flex:0 0 auto;padding:6px 24px 10px;color:var(--dim);font-size:12px}
+  .foot a{color:var(--accent)}
+
+  /* --- "show the math" modal --- */
+  #mathbtn{margin-left:auto;background:#152a1b;border-color:#2ea043;color:#7ee787;font-weight:600}
+  #mathbtn:hover{border-color:#3fb950}
+  .backdrop{position:fixed;inset:0;background:rgba(3,6,10,.72);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:24px}
+  .backdrop.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:880px;width:100%;
+    max-height:90vh;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.65)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;
+    border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2}
+  .modal-head h2{margin:0;font-size:17px}
+  .modal-head .x{background:#21262d;border:1px solid var(--line);color:var(--fg);border-radius:7px;
+    width:32px;height:32px;cursor:pointer;font-size:15px;line-height:1}
+  .modal-head .x:hover{border-color:var(--accent)}
+  .modal-body{padding:6px 22px 22px}
+  .mlead{font-size:13px;color:var(--dim);line-height:1.55;margin:12px 2px 0}
+  .mcard{border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:14px 16px;margin-top:16px}
+  .mcard h3{margin:0 0 6px;font-size:14.5px;color:var(--accent)}
+  .mcard h3 .tag{font-size:11px;color:var(--dim);font-weight:500;margin-left:6px}
+  .mcard p{margin:6px 0;font-size:13px;line-height:1.55}
+  .mcard p.dim{color:var(--dim);font-size:12.5px}
+  .formula{font-family:var(--mono);font-size:14px;background:#0a0e14;border:1px solid var(--line);
+    border-radius:8px;padding:12px 14px;margin:10px 0;text-align:center;overflow-x:auto}
+  .formula .hl{color:#7ee787}
+  .frac{display:inline-block;vertical-align:middle;text-align:center;margin:0 3px}
+  .frac .n{display:block;padding:0 7px}
+  .frac .d{display:block;padding:0 7px;border-top:1px solid #6e7681}
+  .ex{font-family:var(--mono);font-size:12.5px;color:#9fb4c9;background:#0a0e14;border-radius:6px;
+    padding:9px 12px;margin-top:8px;line-height:1.75}
+  .ex b{color:#7ee787;font-weight:600}
+  code.reg{color:var(--frame)}
+</style>
+</head>
+<body>
+<header>
+  <h1>EtherCAT Distributed Clocks — how the slaves get one shared clock</h1>
+  <p>A slow, simple walkthrough. Each slave starts with its own clock; the first DC message aligns them; every later
+     message keeps them aligned. Watch the clock hands.</p>
+</header>
+
+<div class="stagebar" id="stagebar">
+  <div class="stage" data-stage="0">
+    <div class="t"><span class="num">1</span>Each slave has its own clock</div>
+    <div class="s">Before DC, the hands point in different directions and drift apart. They do not agree.</div>
+  </div>
+  <div class="stage" data-stage="1">
+    <div class="t"><span class="num">2</span>First DC message aligns them</div>
+    <div class="s">The master measures the cable delay to each slave and sets every clock. The hands jump together.</div>
+  </div>
+  <div class="stage" data-stage="2">
+    <div class="t"><span class="num">3</span>Later messages fight drift</div>
+    <div class="s">Crystals drift a little; each periodic message nudges the clocks back. They stay within nanoseconds.</div>
+  </div>
+  <div class="stage" data-stage="3">
+    <div class="t"><span class="num">4</span>One command, applied together</div>
+    <div class="s">Outputs arrive at different times, but every slave applies them on the shared SYNC0 tick — simultaneously.</div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="playpause" class="primary">⏸ Pause</button>
+  <button id="restart">↻ Restart</button>
+  <div class="speed">
+    <span>Speed</span>
+    <button data-speed="0.25">0.25×</button>
+    <button data-speed="0.5" class="sel">0.5×</button>
+    <button data-speed="1">1×</button>
+  </div>
+  <button id="mathbtn" title="Show the calculations behind the sync">∑ Show the math</button>
+</div>
+
+<div class="stagewrap">
+  <div class="card">
+    <canvas id="cv" width="900" height="430"></canvas>
+    <div class="caption">
+      <div class="big" id="capBig"></div>
+      <div class="sub" id="capSub"></div>
+    </div>
+  </div>
+</div>
+<div class="foot">
+  Want the exact register-level math (propagation-delay formula, offset/drift equations, jitter numbers)?
+  See <a href="distributed-clocks-animation-detailed.html">the detailed version</a>.
+</div>
+
+<!-- ============ optional "show the math" modal ============ -->
+<div class="backdrop" id="backdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="The math behind Distributed Clocks">
+    <div class="modal-head">
+      <h2>The math behind the sync</h2>
+      <button class="x" id="mathclose" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="mlead">Four small calculations turn three independent crystals into one shared clock. The numbers below
+        match the three slaves in the animation.</p>
+
+      <div class="mcard">
+        <h3>1 · Propagation delay<span class="tag">why cable length adds no jitter</span></h3>
+        <p>A broadcast frame latches a <b>receive time-stamp</b> at every port — once on the way out and once on the way
+          back. Both stamps of a pair use the <b>same local clock</b>, so that clock's unknown offset cancels and only the
+          real travel time survives:</p>
+        <div class="formula">RT<sub>x</sub> = t<sub>x1</sub> − t<sub>x0</sub><span class="hl">&nbsp;&nbsp;(offset-immune round-trip)</span></div>
+        <p>The one-way delay is half of the round-trip still ahead of the slave. ETG's exact form for the last node and a
+          middle node:</p>
+        <div class="formula">
+          t<sub>CD</sub> = <span class="frac"><span class="n">t<sub>C1</sub> − t<sub>C0</sub></span><span class="d">2</span></span>
+          &nbsp;&nbsp;&nbsp;
+          t<sub>BC</sub> = <span class="frac"><span class="n">(t<sub>B1</sub> − t<sub>B0</sub>) − (t<sub>C1</sub> − t<sub>C0</sub>) + t<sub>Diff</sub></span><span class="d">2</span></span>
+        </div>
+        <p>For our line the delay from the reference to slave&nbsp;<i>n</i> reduces to:</p>
+        <div class="formula">D<sub>n</sub> = <span class="frac"><span class="n">RT<sub>ref</sub> − RT<sub>n</sub></span><span class="d">2</span></span></div>
+        <div class="ex">
+          RT<sub>ref</sub> = 1700 ns&nbsp;&nbsp;RT<sub>2</sub> = 900 ns&nbsp;&nbsp;RT<sub>3</sub> = 0 ns<br>
+          D<sub>2</sub> = (1700 − 900) / 2 = <b>400 ns</b><br>
+          D<sub>3</sub> = (1700 − 0) / 2 = <b>850 ns</b>
+        </div>
+        <p class="dim">A longer cable changes RT by a <b>fixed, measured</b> amount — a latency, not a random jitter.
+          That is why a 100&nbsp;m line syncs as tightly as a 1&nbsp;m line.</p>
+      </div>
+
+      <div class="mcard">
+        <h3>2 · Offset compensation<span class="tag">register 0x0920</span></h3>
+        <p>Each slave's <b>System Time</b> is its local counter plus a constant offset. The master writes the offset so
+          every slave matches the reference:</p>
+        <div class="formula">SystemTime<sub>n</sub> = LocalTime<sub>n</sub> + Offset<sub>n</sub>&nbsp;,&nbsp;&nbsp;
+          Offset<sub>n</sub> = T<sub>ref</sub> − T<sub>local,n</sub></div>
+        <div class="ex">
+          T<sub>ref</sub> = 100000 ns,&nbsp; slave&nbsp;2 local = 107450 ns<br>
+          Offset<sub>2</sub> = 100000 − 107450 = <b>−7450 ns</b>
+        </div>
+        <p class="dim">Written to <code class="reg">0x0920</code>. After this every clock reads the same absolute time —
+          the hands jump together in step&nbsp;2.</p>
+      </div>
+
+      <div class="mcard">
+        <h3>3 · Delay compensation<span class="tag">register 0x0928</span></h3>
+        <p>SYNC0 output pulses are generated from each slave's own System Time. Loading each slave's measured delay
+          D<sub>n</sub> into <code class="reg">0x0928</code> aligns every System Time to the same real instant, so a pulse
+          programmed for one System-Time value fires together on every axis:</p>
+        <div class="formula">SYNC0<sub>n</sub> fires when SystemTime<sub>n</sub> = StartTime&nbsp;&nbsp;⇒&nbsp;&nbsp;<span class="hl">all axes fire together</span></div>
+        <div class="ex">D<sub>3</sub> = 850 ns is baked into slave&nbsp;3's clock, so its SYNC0 lines up with slave&nbsp;1 to within nanoseconds.</div>
+      </div>
+
+      <div class="mcard">
+        <h3>4 · Drift compensation<span class="tag">cyclic ARMW / FRMW datagram</span></h3>
+        <p>Two crystals never tick at exactly the same rate. If a slave runs at rate (1 + ε), the error grows over one
+          cycle&nbsp;T:</p>
+        <div class="formula">ΔT = ε · T</div>
+        <p>Every cycle one datagram carries the reference time to all slaves; each slave's DC control loop nudges its own
+          rate to drive the error back toward zero:</p>
+        <div class="formula">rate<sub>new</sub> = rate<sub>old</sub> · (1 − k · ΔT)</div>
+        <div class="ex">
+          ε = 20 ppm,&nbsp; T = 1 ms<br>
+          ΔT = 20×10⁻⁶ × 1×10⁶ ns = <b>20 ns</b> per cycle → corrected every cycle, so it never accumulates.
+        </div>
+        <p class="dim">This is step&nbsp;3 in the animation: the hands drift a little, then each message pulls them back — forever.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   Simple Distributed Clocks story — 3 slaves on a line, slave 1 = reference.
+   One continuous, slow timeline:
+     STAGE 1  free-run: 3 clocks, different start + different rate -> unsynced
+     STAGE 2  first DC message travels; then all clocks snap into alignment
+     STAGE 3  clocks drift a little; periodic messages snap them back (loops)
+   Everything is time-driven so it can be slowed with the speed buttons.
+   ============================================================================ */
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+
+// ---- timeline (seconds, at 1x). Deliberately slow. ----
+const T1 = 9;          // stage 1 duration (free-run)
+const MSG_TRAVEL = 4;  // stage 2: frame travels the bus
+const SNAP = 3.5;      // stage 2: clocks slide into alignment
+const SETTLE = 2;      // stage 2: hold aligned
+const T2_LEN = MSG_TRAVEL + SNAP + SETTLE;
+const T2 = T1 + T2_LEN;
+const RESYNC = 9;      // stage 3: one drift-and-correct cycle
+const S3_MSG = 3.5;    // how long the stage-3 message takes to sweep + pull back
+const T3 = T2 + RESYNC;      // stage 4 starts here (clocks stay synced from now on)
+
+// stage 4 — synchronized outputs (loops)
+const OUT_PERIOD = 9;        // one process-data cycle
+const OUT_TRAVEL = 3.5;      // frame delivers each slave its output (staggered)
+const OUT_WAIT   = 2;        // all buffered, waiting for the shared SYNC0
+const OUT_APPLY  = 0.7;      // outputs snap to the commanded value together
+const APPLY_AT   = OUT_TRAVEL + OUT_WAIT;
+
+const STAGE_START = [0, T1, T2, T3];
+
+// per-slave commanded output for cycle k (0..1); different per slave, changes each cycle
+const OUT_PH = { S1:0.0, S2:2.1, S3:4.2 };
+function cmdVal(id, k){ return k<0 ? 0.5 : 0.5 + 0.38*Math.sin(k*0.9 + OUT_PH[id]); }
+
+// ---- slaves ----
+const busY = 305;
+const NODES = [
+  { id:'M',  label:'Master',  x:80 },
+  { id:'S1', label:'Slave 1', x:320, ref:true  },
+  { id:'S2', label:'Slave 2', x:560, ref:false },
+  { id:'S3', label:'Slave 3', x:800, ref:false },
+];
+const clockCX = { S1:320, S2:560, S3:800 };
+const clockCY = 150, clockR = 60;
+
+// free-run parameters: each slave a different starting angle + slightly different speed
+const START_ANG = { S1:0.15, S2:0.62, S3:0.88 };   // fraction of a turn (0..1)
+const RATE      = { S1:1.00, S2:1.14, S3:0.83 };    // relative tick speed (drift)
+const BASE_TURN = 0.09;                              // turns per second at 1x (slow hand)
+
+// digital clock offsets (ns) to show they disagree before sync
+const NS_OFFSET = { S1:0, S2:7450, S3:-5210 };
+const NS_BASE = 100000;         // reference-ish counter start
+const NS_RATE = 34000;          // ns per second of animation (moving readout)
+
+// ---- state ----
+let t = 0;              // seconds into the whole timeline (stage 3 loops internally)
+let playing = true;
+let speed = 0.5;
+let lastTs = 0;
+let snapFrom = null;    // captured angles when stage-2 snap begins
+let snapFromNs = null;
+
+function turns(x){ return x*Math.PI*2; }
+function freeAngle(id, tt){ return (START_ANG[id] + BASE_TURN*RATE[id]*tt) % 1; }
+function ease(x){ return x<0?0 : x>1?1 : (x*x*(3-2*x)); }  // smoothstep
+function lerpAngle(a,b,f){ let d=((b-a+0.5+1)%1)-0.5; return (a + d*f + 1)%1; }
+
+// ---------------------------------------------------------------------------
+//  drawing helpers
+// ---------------------------------------------------------------------------
+function rr(x,y,w,h,r){ ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+function drawBus(){
+  ctx.strokeStyle='#243040'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(NODES[0].x, busY); ctx.lineTo(NODES[3].x, busY); ctx.stroke();
+}
+function drawNode(n){
+  const w=92,h=40,x=n.x-w/2,y=busY-h/2;
+  rr(x,y,w,h,9);
+  ctx.fillStyle = n.ref ? '#12261a' : (n.id==='M' ? '#1a2330' : '#141b26');
+  ctx.fill();
+  ctx.lineWidth=2; ctx.strokeStyle = n.ref ? '#2ea043' : '#30363d'; ctx.stroke();
+  ctx.fillStyle='#e6edf3'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(n.label, n.x, busY+5);
+  if(n.ref){ ctx.fillStyle='#3fb950'; ctx.font='10px sans-serif'; ctx.fillText('reference', n.x, busY+16); }
+}
+
+// analog clock face with a single hand at fraction angFrac (0..1, 0 = 12 o'clock)
+function drawClock(id, angFrac, opts={}){
+  const cx=clockCX[id], cy=clockCY, r=clockR;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.fillStyle='#0e141d'; ctx.fill();
+  ctx.lineWidth=3; ctx.strokeStyle=opts.ring||'#30363d'; ctx.stroke();
+  ctx.strokeStyle='#2a3442'; ctx.lineWidth=2;
+  for(let i=0;i<12;i++){
+    const a=turns(i/12);
+    const x1=cx+Math.sin(a)*(r-7), y1=cy-Math.cos(a)*(r-7);
+    const x2=cx+Math.sin(a)*(r-2), y2=cy-Math.cos(a)*(r-2);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  }
+  const a=turns(angFrac);
+  const hx=cx+Math.sin(a)*(r-14), hy=cy-Math.cos(a)*(r-14);
+  ctx.strokeStyle=opts.hand||'#58a6ff'; ctx.lineWidth=4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(hx,hy); ctx.stroke(); ctx.lineCap='butt';
+  ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fillStyle=opts.hand||'#58a6ff'; ctx.fill();
+}
+function drawDigital(id, ns, opts={}){
+  const cx=clockCX[id], y=clockCY+clockR+14;
+  const w=118,h=26,x=cx-w/2;
+  rr(x,y,w,h,6);
+  ctx.fillStyle='#0a0e14'; ctx.fill();
+  ctx.strokeStyle=opts.ring||'#30363d'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.fillStyle=opts.color||'#8b949e'; ctx.font='bold 13px var(--mono),monospace'; ctx.textAlign='center';
+  ctx.fillText(Math.round(ns).toLocaleString('en-US')+' ns', cx, y+18);
+}
+// message frame at fraction f (0..1) between master(0) and slave3(1), on the bus
+function drawFrame(f, back, label='DC', color='#d2a8ff'){
+  const x0=NODES[0].x, x1=NODES[3].x;
+  const x = x0 + (x1-x0)*f;
+  const y = busY + (back? 16 : -16);
+  ctx.save();
+  ctx.shadowColor=color; ctx.shadowBlur=14; ctx.fillStyle=color;
+  rr(x-16,y-9,32,18,4); ctx.fill(); ctx.shadowBlur=0;
+  ctx.fillStyle='#0b1220'; ctx.font='bold 10px var(--mono),monospace'; ctx.textAlign='center';
+  ctx.fillText(label, x, y+3.5);
+  ctx.restore();
+}
+function bigLabel(txt, color){
+  ctx.save(); ctx.textAlign='center'; ctx.font='bold 14px sans-serif';
+  ctx.fillStyle=color||'#8b949e'; ctx.fillText(txt, W/2, 40); ctx.restore();
+}
+
+// stage-4 actuator gauge: solid needle = applied output, dashed ghost = buffered command
+function drawGauge(id, applied, pending, o={}){
+  const cx=clockCX[id], cy=382, r=32;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.fillStyle='#0e141d'; ctx.fill();
+  ctx.lineWidth=2; ctx.strokeStyle=o.ring||'#2ea043'; ctx.stroke();
+  if(pending!=null){
+    const a=turns((pending-0.5)*0.28);
+    const hx=cx+Math.sin(a)*(r-8), hy=cy-Math.cos(a)*(r-8);
+    ctx.strokeStyle='#5b6b7d'; ctx.lineWidth=2; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(hx,hy); ctx.stroke(); ctx.setLineDash([]);
+  }
+  const a=turns((applied-0.5)*0.28);
+  const hx=cx+Math.sin(a)*(r-8), hy=cy-Math.cos(a)*(r-8);
+  ctx.strokeStyle=o.hand||'#3fb950'; ctx.lineWidth=3.5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(hx,hy); ctx.stroke(); ctx.lineCap='butt';
+  ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2); ctx.fillStyle=o.hand||'#3fb950'; ctx.fill();
+  ctx.fillStyle='#8b949e'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(o.label||'', cx, cy+r+12);
+}
+function drawOutputs(out){
+  const ids=['S1','S2','S3'];
+  if(out.flash>0){
+    ctx.save();
+    ctx.globalAlpha=0.25+0.6*out.flash;
+    ctx.strokeStyle='#7ee787'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(clockCX.S1-58, 340); ctx.lineTo(clockCX.S3+58, 340); ctx.stroke();
+    ctx.fillStyle='#7ee787'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('SYNC0 — all outputs applied at the same instant', W/2, 333);
+    ctx.restore();
+  }
+  const applying = out.flash>0;
+  ids.forEach((id,i)=>drawGauge(id, out.applied[id], out.pending[id], {
+    ring: applying?'#3fb950':'#2ea043',
+    hand: applying?'#7ee787':'#3fb950',
+    label: 'axis '+(i+1)
+  }));
+}
+
+// ---------------------------------------------------------------------------
+//  stage logic -> state for current t
+// ---------------------------------------------------------------------------
+function computeState(){
+  const ids=['S1','S2','S3'];
+  const st = { ang:{}, ns:{}, ring:{}, hand:{}, dcolor:{}, frame:null, frameBack:false, stage:0 };
+
+  if(t < T1){
+    // STAGE 1 — free-run, unsynced
+    ids.forEach(id=>{
+      st.ang[id]=freeAngle(id,t);
+      st.ns[id]=NS_BASE + NS_RATE*t*RATE[id] + NS_OFFSET[id];
+      st.ring[id]='#6b3f14'; st.hand[id]='#f0883e'; st.dcolor[id]='#f0883e';
+    });
+    st.stage=0;
+  }
+  else if(t < T2){
+    // STAGE 2 — first message + snap
+    const lt = t - T1;
+    if(lt < MSG_TRAVEL){
+      const f = lt/MSG_TRAVEL;
+      st.frame = f<0.5 ? (f*2) : (1-(f-0.5)*2);
+      st.frameBack = f>=0.5;
+      ids.forEach(id=>{
+        st.ang[id]=freeAngle(id, t);
+        st.ns[id]=NS_BASE + NS_RATE*t*RATE[id] + NS_OFFSET[id];
+        st.ring[id]='#6b3f14'; st.hand[id]='#f0883e'; st.dcolor[id]='#f0883e';
+      });
+      snapFrom = null;
+    } else if(lt < MSG_TRAVEL + SNAP){
+      if(!snapFrom){
+        snapFrom = {}; snapFromNs = {};
+        ids.forEach(id=>{
+          snapFrom[id]=freeAngle(id, T1+MSG_TRAVEL);
+          snapFromNs[id]=NS_BASE + NS_RATE*(T1+MSG_TRAVEL)*RATE[id] + NS_OFFSET[id];
+        });
+      }
+      const a = ease((lt-MSG_TRAVEL)/SNAP);
+      const refAng = freeAngle('S1', t);
+      const refNs  = NS_BASE + NS_RATE*t;
+      ids.forEach(id=>{
+        st.ang[id]=lerpAngle(snapFrom[id], refAng, a);
+        st.ns[id]=snapFromNs[id] + (refNs - snapFromNs[id])*a;
+        const locking = a>0.9;
+        st.ring[id]=locking?'#2ea043':'#58a6ff'; st.hand[id]=locking?'#3fb950':'#58a6ff';
+        st.dcolor[id]=locking?'#3fb950':'#58a6ff';
+      });
+    } else {
+      const refAng = freeAngle('S1', t);
+      const refNs  = NS_BASE + NS_RATE*t;
+      ids.forEach(id=>{ st.ang[id]=refAng; st.ns[id]=refNs; st.ring[id]='#2ea043'; st.hand[id]='#3fb950'; st.dcolor[id]='#3fb950'; });
+    }
+    st.stage=1;
+  }
+  else if(t < T3){
+    // STAGE 3 — drift + one corrective message (single cycle, then we move on)
+    const lt = t - T2;
+    const refAng = freeAngle('S1', t);
+    const refNs  = NS_BASE + NS_RATE*t;
+    const driftAmt = { S1:0, S2:0.020, S3:-0.028 };
+    let pull = 1;
+    if(lt < S3_MSG){
+      st.frame = lt<S3_MSG*0.5 ? (lt/(S3_MSG*0.5)) : (1-(lt-S3_MSG*0.5)/(S3_MSG*0.5));
+      st.frameBack = lt>=S3_MSG*0.5;
+      pull = 1 - ease(Math.min(1, lt/S3_MSG));
+    }
+    const driftPhase = lt/RESYNC;
+    ids.forEach(id=>{
+      const d = driftAmt[id]*driftPhase*pull;
+      st.ang[id]=(refAng + d + 1)%1;
+      st.ns[id]=refNs + d*NS_RATE*0.3;
+      const off = Math.abs(d) > 0.006;
+      st.ring[id]= off? '#6b3f14' : '#2ea043';
+      st.hand[id]= off? '#f0883e' : '#3fb950';
+      st.dcolor[id]= off? '#f0883e' : '#3fb950';
+    });
+    st.stage=2;
+  }
+  else{
+    // STAGE 4 — synchronized outputs. Clocks stay locked; SYNC0 applies outputs together.
+    const refAng = freeAngle('S1', t);
+    const refNs  = NS_BASE + NS_RATE*t;
+    ids.forEach(id=>{ st.ang[id]=refAng; st.ns[id]=refNs;
+      st.ring[id]='#2ea043'; st.hand[id]='#3fb950'; st.dcolor[id]='#3fb950'; });
+
+    const lt = (t - T3) % OUT_PERIOD;
+    const k  = Math.floor((t - T3) / OUT_PERIOD);
+    const out = { applied:{}, pending:{}, delivered:{}, phase:'', flash:0 };
+
+    if(lt < OUT_TRAVEL){ st.frame = lt/OUT_TRAVEL; st.frameBack = false; }
+    const f = lt < OUT_TRAVEL ? lt/OUT_TRAVEL : 1;
+
+    ids.forEach(id=>{
+      const reach = (clockCX[id]-NODES[0].x)/(NODES[3].x-NODES[0].x);
+      const delivered = f >= reach;
+      out.delivered[id] = delivered;
+      const prev = cmdVal(id, k-1), cur = cmdVal(id, k);
+      out.pending[id] = (delivered && lt < APPLY_AT) ? cur : null;
+      let ap;
+      if(lt < APPLY_AT)                  ap = prev;
+      else if(lt < APPLY_AT + OUT_APPLY)  ap = prev + (cur-prev)*ease((lt-APPLY_AT)/OUT_APPLY);
+      else                                ap = cur;
+      out.applied[id] = ap;
+    });
+
+    if(lt < OUT_TRAVEL)                  out.phase='deliver';
+    else if(lt < APPLY_AT)               out.phase='wait';
+    else if(lt < APPLY_AT + OUT_APPLY){  out.phase='apply'; out.flash = 1 - (lt-APPLY_AT)/OUT_APPLY; }
+    else                                out.phase='hold';
+
+    st.out = out;
+    st.stage=3;
+  }
+  return st;
+}
+
+// ---------------------------------------------------------------------------
+//  render
+// ---------------------------------------------------------------------------
+function render(){
+  ctx.clearRect(0,0,W,H);
+  drawBus();
+  NODES.forEach(drawNode);
+  const s = computeState();
+  ['S1','S2','S3'].forEach(id=>{
+    drawClock(id, s.ang[id], {ring:s.ring[id], hand:s.hand[id]});
+    drawDigital(id, s.ns[id], {ring:s.ring[id], color:s.dcolor[id]});
+  });
+  if(s.stage===3 && s.out) drawOutputs(s.out);
+  if(s.frame!=null) drawFrame(s.frame, s.frameBack, s.stage===3?'PDO':'DC', s.stage===3?'#79c0ff':'#d2a8ff');
+
+  if(s.stage===0) bigLabel('Clocks are free-running — hands point different ways and move at different speeds', '#f0883e');
+  else if(s.stage===1){
+    const lt=t-T1;
+    if(lt<MSG_TRAVEL) bigLabel('First DC message: master measures the delay to each slave…', '#58a6ff');
+    else if(lt<MSG_TRAVEL+SNAP) bigLabel('…now it sets every clock — watch the hands jump together', '#58a6ff');
+    else bigLabel('All clocks aligned — they now share one time', '#3fb950');
+  } else if(s.stage===2){
+    const lt=t-T2;
+    if(lt<S3_MSG) bigLabel('Periodic DC message: pulling the drifting clocks back into line', '#58a6ff');
+    else bigLabel('Between messages the clocks drift a little — then get corrected again', '#f0883e');
+  } else {
+    const p=s.out?s.out.phase:'';
+    if(p==='deliver') bigLabel('Cyclic frame delivers each slave its own output — near slaves first, far slaves last', '#58a6ff');
+    else if(p==='wait') bigLabel('All outputs buffered — every slave waits for the shared SYNC0 tick', '#8b949e');
+    else if(p==='apply') bigLabel('SYNC0 fires on every synced clock at once — all axes move together', '#3fb950');
+    else bigLabel('Outputs held until the next SYNC0 — motion stays perfectly in step', '#3fb950');
+  }
+
+  updateStageUI(s.stage);
+  updateCaption(s.stage);
+}
+
+// ---------------------------------------------------------------------------
+//  captions (below the canvas)
+// ---------------------------------------------------------------------------
+const capBig=document.getElementById('capBig');
+const capSub=document.getElementById('capSub');
+let lastCapStage=-1;
+function updateCaption(stage){
+  if(stage===lastCapStage) return;
+  lastCapStage=stage;
+  if(stage===0){
+    capBig.innerHTML = `<b>Step 1 — every slave has its own clock.</b> Each ESC has its own quartz crystal, so the
+      hands start in different places <span class="w">and</span> tick at slightly different speeds. Left alone, they
+      would never agree — useless for moving several axes together.`;
+    capSub.innerHTML = `The digital readouts (ns) are far apart, and the gap keeps growing.`;
+  } else if(stage===1){
+    capBig.innerHTML = `<b>Step 2 — the first DC message aligns them.</b> The master sends a frame that each slave
+      time-stamps as it passes. From those stamps the master works out the <b>cable/propagation delay</b> to each
+      slave, then writes an <b>offset</b> into every clock so they all read the <span class="g">same time</span>.
+      The hands jump together.`;
+    capSub.innerHTML = `Registers: receive-time stamps measure the delay; System Time Offset <code>0x0920</code> and
+      System Time Delay <code>0x0928</code> set each clock. After this the clocks agree to within a few ns.`;
+  } else if(stage===2) {
+    capBig.innerHTML = `<b>Step 3 — later messages keep them aligned.</b> The two crystals still tick at slightly
+      different rates, so the hands slowly drift apart again. <span class="g">Every cycle</span> the master sends
+      another DC message, and each slave nudges its own tick rate to snap back — staying locked to
+      <span class="g">within nanoseconds</span>, forever.`;
+    capSub.innerHTML = `One datagram (<code>ARMW/FRMW</code>) re-syncs the whole bus each cycle, no matter how many
+      slaves. This continuous correction is what makes the SYNC0 output pulses fire together on every axis.`;
+  } else {
+    capBig.innerHTML = `<b>Step 4 — one command, applied together.</b> Each cycle the master sends a
+      <b>process-data frame</b> carrying a separate output for every slave. It reaches the near slaves first and the
+      far slaves last, so each value is <span class="w">buffered, not applied</span>. When every slave's synchronized
+      clock reaches the shared <b>SYNC0</b> instant, they all apply their outputs at <span class="g">exactly the same
+      time</span>.`;
+    capSub.innerHTML = `Delivery timing is jittery (µs), but actuation is triggered by SYNC0 from each slave's own DC
+      clock — so all axes move within nanoseconds of each other, anywhere on the line. Dashed needle = buffered
+      command, solid needle = live output.`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  stage tabs
+// ---------------------------------------------------------------------------
+const stageEls=[...document.querySelectorAll('.stage')];
+function updateStageUI(stage){
+  stageEls.forEach((el,i)=>el.classList.toggle('active', i===stage));
+}
+stageEls.forEach(el=>{
+  el.addEventListener('click',()=>{
+    const s=parseInt(el.dataset.stage,10);
+    t = STAGE_START[s] + 0.01;
+    snapFrom=null; lastCapStage=-1;
+    render();
+  });
+});
+
+// ---------------------------------------------------------------------------
+//  controls
+// ---------------------------------------------------------------------------
+const ppBtn=document.getElementById('playpause');
+ppBtn.onclick=()=>{ playing=!playing; ppBtn.textContent=playing?'⏸ Pause':'▶ Play'; };
+document.getElementById('restart').onclick=()=>{ t=0; snapFrom=null; lastCapStage=-1; render(); };
+document.querySelectorAll('.speed button').forEach(b=>{
+  b.onclick=()=>{
+    speed=parseFloat(b.dataset.speed);
+    document.querySelectorAll('.speed button').forEach(x=>x.classList.toggle('sel', x===b));
+  };
+});
+
+// ---- "show the math" modal ----
+const backdrop=document.getElementById('backdrop');
+function openMath(){ backdrop.classList.add('open'); }
+function closeMath(){ backdrop.classList.remove('open'); }
+document.getElementById('mathbtn').onclick=openMath;
+document.getElementById('mathclose').onclick=closeMath;
+backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closeMath(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeMath(); });
+
+// ---------------------------------------------------------------------------
+//  loop
+// ---------------------------------------------------------------------------
+function tick(ts){
+  if(!lastTs) lastTs=ts;
+  const dt=(ts-lastTs)/1000; lastTs=ts;
+  if(playing){
+    t += dt*speed;
+    if(t > T3 + OUT_PERIOD*1000) t = T3 + ((t - T3) % OUT_PERIOD);
+  }
+  render();
+  requestAnimationFrame(tick);
+}
+render();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
