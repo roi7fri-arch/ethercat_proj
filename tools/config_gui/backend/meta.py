@@ -163,36 +163,131 @@ _STD_TEMPLATES = {
 
 DEFAULT_PROFILE = "elmo_platinum"
 
+# The id of the fallback the firmware uses for any profile it does not know.
+# Must match drive_profile_generic()->id in src/drive/drive_profile.c.
+GENERIC_PROFILE = "cia402_generic"
+
+# Families the master has a registered drive_profile_t for (src/vendors/).
+# Anything else is still perfectly usable - the firmware falls back to the
+# generic CiA 402 handling - but it gets no vendor quirks or fault decoding,
+# so the UI says so rather than letting the user assume otherwise.
+#
+# Keep these ids identical to the `id` fields in src/vendors/*/*.c. The
+# multivendor simulation test is what proves an unlisted family still works.
+FIRMWARE_PROFILES = ["elmo_platinum", "elmo_gold", GENERIC_PROFILE]
+
 PROFILES = [
     {
         "id": "elmo_platinum",
         "label": "Elmo Platinum",
+        "description": "Single or dual axis. Clears stale mapping objects on "
+                       "start-up; manufacturer fault codes decoded.",
         "default_vendor_id": "0x0000009A",
+        "default_product_code": "0x00030924",
         "object_dictionary": OBJECT_DICTIONARY,
         "mode_templates": MODE_TEMPLATES,
     },
     {
         "id": "elmo_gold",
         "label": "Elmo Gold",
+        "description": "Standard CiA 402 behaviour plus Elmo fault decoding.",
         "default_vendor_id": "0x0000009A",
+        "default_product_code": "0x00030924",
         "object_dictionary": OBJECT_DICTIONARY,
         "mode_templates": MODE_TEMPLATES,
     },
     {
-        "id": "acs",
-        "label": "ACS Motion Control",
+        "id": GENERIC_PROFILE,
+        "label": "Generic CiA 402",
+        "description": "Any standards-compliant drive. No vendor extensions.",
         "default_vendor_id": "",
+        "default_product_code": "",
         "object_dictionary": _STD_OBJECTS,
         "mode_templates": _STD_TEMPLATES,
     },
     {
-        "id": "generic_cia402",
-        "label": "Generic CiA402",
+        "id": "acs",
+        "label": "ACS Motion Control",
+        "description": "Standard CiA 402 picklist. Fill the identity fields "
+                       "from the drive's ESI file.",
         "default_vendor_id": "",
+        "default_product_code": "",
+        "object_dictionary": _STD_OBJECTS,
+        "mode_templates": _STD_TEMPLATES,
+    },
+    {
+        "id": "copley_accelnet",
+        "label": "Copley Accelnet / Xenus",
+        "description": "Standard CiA 402 picklist. Fill the identity fields "
+                       "from the drive's ESI file.",
+        "default_vendor_id": "",
+        "default_product_code": "",
+        "object_dictionary": _STD_OBJECTS,
+        "mode_templates": _STD_TEMPLATES,
+    },
+    {
+        "id": "maxon_epos4",
+        "label": "maxon EPOS4",
+        "description": "Standard CiA 402 picklist. Fill the identity fields "
+                       "from the drive's ESI file.",
+        "default_vendor_id": "",
+        "default_product_code": "",
         "object_dictionary": _STD_OBJECTS,
         "mode_templates": _STD_TEMPLATES,
     },
 ]
+
+# Annotate each entry with whether the firmware has a dedicated profile for it,
+# so the frontend does not have to know the rule.
+for _p in PROFILES:
+    _p["firmware"] = _p["id"] in FIRMWARE_PROFILES
+    _p["falls_back_to"] = None if _p["firmware"] else GENERIC_PROFILE
+
+
+def profile_by_id(profile_id):
+    for p in PROFILES:
+        if p["id"] == profile_id:
+            return p
+    return None
+
+
+def profile_warnings(config):
+    """Warnings about the drive families a configuration names.
+
+    Not errors: an unrecognised profile still runs, it just gets the generic
+    CiA 402 treatment. Surfacing it here stops a typo in the profile name from
+    silently costing a drive its vendor quirks.
+    """
+    out = []
+    for slave in config.get("slaves", []):
+        pos = slave.get("position")
+        pid = (slave.get("profile") or "").strip()
+        name = slave.get("name") or "slave %s" % pos
+
+        if not pid:
+            out.append("slave %s (%s): no profile set, the master will use %s"
+                       % (pos, name, GENERIC_PROFILE))
+            continue
+
+        known = profile_by_id(pid)
+        if known is None:
+            out.append("slave %s (%s): profile '%s' is unknown to this tool; "
+                       "the master will fall back to %s"
+                       % (pos, name, pid, GENERIC_PROFILE))
+        elif not known["firmware"]:
+            out.append("slave %s (%s): '%s' has no dedicated driver in the "
+                       "master; it will run as %s (standard CiA 402, no vendor "
+                       "quirks or fault decoding)"
+                       % (pos, name, known["label"], GENERIC_PROFILE))
+
+        if known is not None and known["firmware"]:
+            expected = slave.get("expected_vendor_id")
+            default = known.get("default_vendor_id")
+            if default and expected and int(expected, 0) != int(default, 0):
+                out.append("slave %s (%s): vendor id %s does not match the "
+                           "usual %s for %s"
+                           % (pos, name, expected, default, known["label"]))
+    return out
 
 # Default PDO-mapping / SM-assignment objects (standard CiA402 addresses).
 MAP_DEFAULTS = {

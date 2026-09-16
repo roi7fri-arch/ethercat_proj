@@ -24,19 +24,18 @@
 #include "elmo_device.h"
 #include "params.h"
 #include "joystick_eth.h"
-#include "ECD_Motor.h"
-#include "elmo_config_setup.h"
+#include "motion.h"
 #include "telemetry.h"
 #include "ecat_diag.h"
+#include "axis.h"
+#include "drive_profile.h"
+#include "ecat_coe.h"
+#include "vendors.h"
 
 
 #define NSEC_PER_SEC 1000000000
 
 extern char IOmap[4096];
-in_ELMOt elmo_inTR[12000];
-in_ELMOt elmo_inEL[12000];
-out_ELMOt elmo_outTR[12000];
-out_ELMOt elmo_outEL[12000];
 
 int expectedWKC;
 volatile int wkc;
@@ -497,17 +496,18 @@ int main()
 	  int number_of_cycles = 0;
 	  int res = 0;
 	  int i = 0, j;
+	  int ax_i;
 	  int oloop, iloop, chk;
-	  in_ELMOt *in_ELMO_EL, *in_ELMO_TR;
 	  int word_size = 2;
 	  StatusWord status;
 	  Control_Word cw;
 	  int16 output_buf[12001];
-	  RT_MODEL_ECD_Motor_T rt_motor;
-	  ExtU_ECD_Motor_T extu_motor;
-	  ExtY_ECD_Motor_T exty_motor;
+	  motion_source_t  *motion;
+	  motion_feedback_t mot_fb[MOTION_MAX_AXES];
+	  motion_setpoint_t mot_sp[MOTION_MAX_AXES];
 	  int once = 0;
 	  telemetry_t tlm;
+	  axis_set_t axes;
 	  int recovery_running = 0;
 	  ecat_diag_slave_t diag[ECAT_CFG_MAX_SLAVES];
 	  int ndiag = 0;
@@ -544,6 +544,11 @@ int main()
 	  if(fd < 0) return 0;
 	  write(fd, &latency_target_value, 4);
 
+	  /* Make every supported drive family known before the configuration is
+	   * applied; each slave then gets the one its JSON "profile" field names. */
+	  vendors_register_all();
+	  drive_profile_list();
+
 	  /* Load the EtherCAT configuration produced by tools/config_gui.
 	   * Replaces the params.dat / cyclic_sync_*_mode.dat (.ini) files:
 	   * interface, cycle count, mode of operation and PDO maps all come
@@ -577,10 +582,16 @@ int main()
 	  /****** start joystick thread ***********/
 //	  pthread_create(&joystick_thread, NULL, run, NULL);
 
-	  /********* Algo output generation init**********/
-	  rt_motor.blockIO = malloc(sizeof(B_ECD_Motor_T));
-	  rt_motor.dwork = malloc(sizeof(DW_ECD_Motor_T));
-	  ECD_Motor_initialize(&rt_motor, &extu_motor, &exty_motor);
+	  /********* Motion source: where the cyclic setpoints come from. **********/
+	  /* Swap "ecd" for "hold" (or a new source in src/motion) without touching
+	   * a line of the EtherCAT loop below. */
+	  motion = motion_source_create("ecd");
+	  if (!motion)
+	  {
+	  	printf("unknown motion source, falling back to hold\n");
+	  	motion = motion_hold_create();
+	  }
+	  printf("motion source: %s\n", motion->name);
 
 	   /* initialise SOEM, bind socket to ifname. When a second NIC is set in the
 	    * config, use cable redundancy so a single broken cable keeps the bus up. */
@@ -624,11 +635,21 @@ int main()
 	            else
 	               printf("identity verification disabled in config.\n");
 
-	  	      /*link slave specific setup to preop->safeop hook. We do PDO mapping and can set some parameters with SDO messages for example: max motor current in mA*/
-	  	      /* ec_config function will call this function */
-	  	     ec_slave[1].PO2SOconfig = elmo_platinum_setup_from_config;
-	  	    // ec_slave[2].PO2SOconfig = elmo_setup;
-	  	    // ec_slave[3].PO2SOconfig = elmo_setup;
+	  	      /* Per-slave PRE-OP -> SAFE-OP hook. The dispatcher picks the drive
+	  	       * profile named in that slave's config, so a bus may mix families
+	  	       * without a code change. Previously only slave 1 was configured,
+	  	       * and only ever as an Elmo. */
+	  	      {
+	  	      	int s;
+	  	      	for (s = 0; s < g_ecat_config.slave_count; s++)
+	  	      	{
+	  	      		int pos = g_ecat_config.slaves[s].position;
+	  	      		if (pos >= 1 && pos <= ec_slavecount)
+	  	      			ec_slave[pos].PO2SOconfig = ecat_coe_po2so_config;
+	  	      		else
+	  	      			printf("WARNING: configured slave %d is not on the bus\n", pos);
+	  	      	}
+	  	      }
 
 	            ec_config_map(&IOmap);
 
@@ -702,7 +723,6 @@ int main()
 
               	/* EtherCAT standard define the in order to enter state OP in slaves we need to send valid data to outputs.*/
 	              /* send one valid process data to make outputs in slaves happy*/
-		      //update_el_outputs(0);
 	              ec_send_processdata();
 	              ec_receive_processdata(EC_TIMEOUTRET);
 	              /* request OP state for all slaves */
@@ -761,8 +781,52 @@ int main()
 
 	                     /* cyclic loop */
 	                 /********************************/
-	                 startMotorTimerFunction(1);
-	                // startMotorTimerFunction(2);
+	                 /* Build one axis_t per axis on the bus, straight from the
+	                  * configured PDO map. A dual-axis node (Platinum) yields two
+	                  * entries; nothing below cares which vendor built the drive
+	                  * or which position it sits at. Replaces the blocking SDO
+	                  * bring-up in startMotorTimerFunction() - the CiA 402 ladder
+	                  * now runs over PDOs inside the cyclic loop. */
+	                 memset(&axes, 0, sizeof(axes));
+	                 {
+	                 	int s;
+	                 	for (s = 0; s < g_ecat_config.slave_count; s++)
+	                 	{
+	                 		const ecat_slave_config_t *sc = &g_ecat_config.slaves[s];
+	                 		int pos = sc->position;
+	                 		if (axis_set_add_slave(&axes, sc, pos,
+	                 				ec_slave[pos].outputs, ec_slave[pos].Obytes,
+	                 				ec_slave[pos].inputs,  ec_slave[pos].Ibytes) < 0)
+	                 		{
+	                 			printf("ERROR: could not bind axes for slave %d\n", pos);
+	                 			shutdown = 1;
+	                 		}
+	                 	}
+	                 }
+	                 printf("%d axis/axes bound:\n", axes.count);
+	                 for (ax_i = 0; ax_i < axes.count; ax_i++)
+	                 	axis_print(&axes.axis[ax_i]);
+
+	                 /* Refuse to spin the loop if the map is missing anything the
+	                  * configured mode needs. This used to be a struct cast that
+	                  * silently read the wrong bytes. */
+	                 if (axis_set_validate(&axes) != 0)
+	                 {
+	                 	printf("ERROR: PDO map does not satisfy the configured mode(s).\n");
+	                 	shutdown = 1;
+	                 }
+
+	                 /* Start the motion source now that the axis count is known. */
+	                 if (axes.count > 0)
+	                 	motion_ecd_set_mode((uint16)axes.axis[0].mode);
+	                 if (motion_init(motion, axes.count,
+	                                 g_ecat_config.network.cycle_time_us) != 0)
+	                 {
+	                 	printf("ERROR: motion source '%s' failed to start\n", motion->name);
+	                 	shutdown = 1;
+	                 }
+	                 memset(mot_fb, 0, sizeof(mot_fb));
+	                 memset(mot_sp, 0, sizeof(mot_sp));
 
 	                 /* diagnostic timer */
 	             	clock_gettime(CLOCK_MONOTONIC, &start);
@@ -828,17 +892,44 @@ int main()
                  		if(latency_time > max_latency) max_latency = latency_time;
                  		if(latency_time < min_latency) min_latency = latency_time;
 
-	             		/**** update outputs for motors from file*****/
-//	                	update_el_outputs(output_buf[i]);
-//	                	update_tr_outputs(output_buf[i]);
+                 		/* Feed this cycle's feedback to the motion source and take
+                 		 * one setpoint per axis back. The source has no idea it is
+                 		 * talking to EtherCAT. */
+                 		for (ax_i = 0; ax_i < axes.count; ax_i++)
+                 		{
+                 			axis_read(&axes.axis[ax_i]);
+                 			mot_fb[ax_i].position_actual = axes.axis[ax_i].position_actual;
+                 			mot_fb[ax_i].velocity_actual = axes.axis[ax_i].velocity_actual;
+                 			mot_fb[ax_i].torque_actual   = axes.axis[ax_i].torque_actual;
+                 			mot_fb[ax_i].operational     = axis_is_operational(&axes.axis[ax_i]);
+                 		}
+                 		motion_step(motion, (uint32_t)i, mot_fb, mot_sp, axes.count);
 
-                 		/***** update ouputs from Algo generation code *******/
-                 		ECD_Motor_step(&rt_motor, &extu_motor, &exty_motor);
-                 		update_el_outputs(exty_motor.PosOffset, exty_motor.VelOffset, exty_motor.TorqueOffset);
-                 		// update_outputs_telemetry_buf(elmo_outTR + i, elmo_outEL + i); // legacy 2-axis log (invalid with 1 slave; telemetry_sample replaces it)
-		             		/**** update outputs for motors from joystick*****/
-//		                	update_el_outputs(get_el_torque_val());
-//		                	update_tr_outputs(get_tr_torque_val());
+                 		/* Per-axis: run the CiA 402 ladder, then either command the
+                 		 * motion source's setpoint or hold the command at the
+                 		 * measured position so enabling never produces a step.
+                 		 * Vendor- and topology-agnostic. */
+                 		for (ax_i = 0; ax_i < axes.count; ax_i++)
+                 		{
+                 			axis_t *ax = &axes.axis[ax_i];
+
+                 			if (wkc < expectedWKC)
+                 			{
+                 				/* Stale or lost process data: do not command motion. */
+                 				axis_safe_stop(ax);
+                 				continue;
+                 			}
+
+                 			axis_enable_step(ax);
+
+                 			if (axis_is_operational(ax))
+                 				axis_write_setpoint(ax, mot_sp[ax_i].position,
+                 				                    mot_sp[ax_i].velocity,
+                 				                    mot_sp[ax_i].torque);
+                 			else
+                 				axis_hold(ax);
+                 		}
+
 	                	/****** start measure roundtrip time *****/
 	            		clock_gettime(CLOCK_MONOTONIC, &roundtrip_start);
 	                    ec_send_processdata();
@@ -850,27 +941,6 @@ int main()
 	                     		execution_time = (roundtrip_end.tv_sec * NSEC_PER_SEC  + roundtrip_end.tv_nsec)  - (roundtrip_start.tv_sec * NSEC_PER_SEC +  roundtrip_start.tv_nsec);
 	                     		if(execution_time > max_execution) max_execution = execution_time;
 	                     		if(execution_time < min_execution) min_execution = execution_time;
-	                     		// update_inputs_telemetry_buf(elmo_inTR + i, elmo_inEL + i); // legacy 2-axis log (telemetry_sample replaces it)
-	                       // 	 in_ELMO_EL = (in_ELMOt*)ec_slave[ELMO_EL].inputs;
-	                       // 	 in_ELMO_TR = (in_ELMOt*)ec_slave[ELMO_TR].inputs;
-	                       // 	 printf("EL pos_act is 0x%x  ", in_ELMO_EL->currentActualValue);
-	                       // 	 printf("EL vel is 0x%x   ", in_ELMO_EL->vx);
-	                       // 	 printf("TR pos_act is 0x%x  ", in_ELMO_TR->currentActualValue);
-	                       // 	 printf("TR vel is 0x%x   ", in_ELMO_TR->vx);
-	                       //     printf("Processdata cycle %4d, WKC %d , O:\r", i, wkc);
-/*
-	                             for(j = 0 ; j < oloop; j++)
-	                             {
-	                                 printf(" %2.2x", *(ec_slave[1].outputs + j));
-	                             }
-
-	                             printf(" I:");
-	                             for(j = 0 ; j < iloop; j++)
-	                             {
-	                                 printf(" %2.2x", *(ec_slave[1].inputs + j));
-	                             }
-	                             printf(" T:%lld\r",ec_DCtime);
-*/
 	                         }
 
 	                         /* keep the local cycle phase-locked to slave DC SYNC0 */
@@ -941,9 +1011,8 @@ int main()
 	   if (telemetry_write(&tlm, "telemetry") != 0)
 	   	printf("telemetry write failed: %s\n", telemetry_last_error());
 	   telemetry_free(&tlm);
+	   motion_shutdown(motion);
 	   ec_close();
-//	   create_log_file(elmo_inTR, elmo_inEL, elmo_outTR, elmo_outEL, 12000);
-//	   pthread_cancel(joystick_thread);
 	   return 0;
 }
 

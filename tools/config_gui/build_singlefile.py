@@ -28,19 +28,43 @@ OUT_TXT = os.path.join(HERE, "ethercat_config_builder.html.txt")
 sys.path.insert(0, os.path.join(HERE, "backend"))
 import meta as M  # noqa: E402
 
+try:
+    import param_meta as PM  # noqa: E402
+except ImportError:      # parameter editing is optional in very old checkouts
+    PM = None
+
 
 def api_meta():
-    """The exact payload the /api/meta endpoint returns, embedded for offline use."""
-    return {
+    """The exact payload the /api/meta endpoint returns, embedded for offline use.
+
+    The parameter catalogue rides along under "params" so the Parameters tab
+    works in the single-file build too. The Bus tab does not: it needs a backend
+    that can run the EtherCAT tool, and the UI says so.
+    """
+    payload = {
         "version": M.CONFIG_VERSION,
         "modes": M.MODES,
         "object_dictionary": M.OBJECT_DICTIONARY,
         "mode_templates": {str(k): v for k, v in M.MODE_TEMPLATES.items()},
         "profiles": M.PROFILES,
         "default_profile": M.DEFAULT_PROFILE,
+        "generic_profile": getattr(M, "GENERIC_PROFILE", "cia402_generic"),
+        "firmware_profiles": getattr(M, "FIRMWARE_PROFILES", []),
         "map_defaults": M.MAP_DEFAULTS,
         "default_config": M.default_config(),
     }
+    if PM is not None:
+        payload["params"] = {
+            "version": PM.PARAM_VERSION,
+            "types": PM.PARAM_TYPES,
+            "default_type": PM.DEFAULT_PARAM_TYPE,
+            "catalogue": PM.PARAM_CATALOGUE,
+            "groups": PM.PARAM_GROUPS,
+            "default_set": PM.default_param_set(),
+            "default_entry": PM.default_param_entry(),
+            "default_file": PM.default_param_file(),
+        }
+    return payload
 
 
 def _read(path):

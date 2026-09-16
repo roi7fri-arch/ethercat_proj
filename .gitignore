@@ -18,6 +18,40 @@ __pycache__/
 *.bin.tmp
 trace.dat
 
+# Output of the top-level Makefile: libsoem.a, ecat_master, ecat_param_tool and
+# all their objects. Fully regenerable with `make soem app tools`.
+/build/
+
+# Test binaries built next to their sources by learning_ethercat/sim_test.
+# The .c files are tracked; the executables are not.
+/learning_ethercat/sim_test/sim_test
+/learning_ethercat/sim_test/stack_tests
+/learning_ethercat/sim_test/gui_config_test
+/learning_ethercat/sim_test/telemetry_sim_test
+/learning_ethercat/sim_test/diag_sim_test
+/learning_ethercat/sim_test/multivendor_sim_test
+/learning_ethercat/sim_test/cia402_test
+/learning_ethercat/sim_test/pdo_bind_test
+/learning_ethercat/sim_test/axis_test
+/learning_ethercat/sim_test/drive_profile_test
+/learning_ethercat/sim_test/motion_test
+/learning_ethercat/sim_test/param_test
+/learning_ethercat/sim_test/config_loader_test
+
+# Telemetry CSVs written by a run of the master.
+telemetry_slave*.csv
+
+# ---- Superseded copies, kept only on this machine ----
+# archive/ holds the two duplicate SOEM trees (new_SOEM, c45_SOEM) and the
+# Elmo-specific setup file that the refactor replaced. They are not committed
+# because git already has them: check out the `pre-modular-refactor` tag to get
+# any of them back byte-for-byte. Keeping them here as well would duplicate
+# ~10 MB in every clone for no benefit.
+/archive/
+
+# ---- Editor backup files ----
+*~
+
 # ---- Packaging output ----
 *.tgz
 *.tar.gz

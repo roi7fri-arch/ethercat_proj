@@ -25,9 +25,16 @@ extern "C" {
 
 /** Reset to a single virtual slave in power-on state (INIT, SII loaded). */
 void slavesim_init(void);
-
 /** Reset to \a n identical virtual slaves (clamped to [1, SLAVESIM_MAX_SLAVES]). */
 void slavesim_init_n(int n);
+
+/** Identity the virtual slaves report in their SII (EEPROM), i.e. which drive
+ *  they pretend to be. Call before slavesim_init*(). Defaults to Elmo Platinum.
+ *  slavesim_impersonate() in slave_sim_profile.h sets this from a registered
+ *  drive profile, which is how a Copley or Maxon bus is simulated without any
+ *  hardware. */
+void slavesim_set_identity(uint32_t vendor, uint32_t product, uint32_t revision);
+void slavesim_get_identity(uint32_t *vendor, uint32_t *product, uint32_t *revision);
 
 /** Build a default single-slave bus only if the caller has not configured one
  *  yet (used by the simulated NIC driver at setup time). */

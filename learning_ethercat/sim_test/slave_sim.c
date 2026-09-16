@@ -126,6 +126,27 @@ static int     g_nslaves = 1;
 static int     g_verbose = 0;
 static int     g_configured = 0;   /* set once the test/nicdrv has built the bus */
 
+/* Identity the virtual slaves report in their SII. Defaults to Elmo Platinum
+ * because that is what the project started with, but any drive family can be
+ * impersonated - see slavesim_set_identity() and slavesim_impersonate(). */
+static uint32_t g_vendor_id    = 0x0000009Au;
+static uint32_t g_product_code = 0x00030924u;
+static uint32_t g_revision     = 0x00010420u;
+
+void slavesim_set_identity(uint32_t vendor, uint32_t product, uint32_t revision)
+{
+   g_vendor_id    = vendor;
+   g_product_code = product;
+   g_revision     = revision;
+}
+
+void slavesim_get_identity(uint32_t *vendor, uint32_t *product, uint32_t *revision)
+{
+   if (vendor)   *vendor   = g_vendor_id;
+   if (product)  *product  = g_product_code;
+   if (revision) *revision = g_revision;
+}
+
 /* ----------------------------------------------------------------------- */
 /* SII (EEPROM) image                                                      */
 /* ----------------------------------------------------------------------- */
@@ -139,12 +160,12 @@ static void build_sii(slave_t *s)
    memset(s->sii, 0, sizeof(s->sii));
 
    /* Configured station alias / vendor / product / revision */
-   sii_setword(s, 0x08, 0x009A);   /* Vendor ID  (Elmo = 0x0000009A) lo */
-   sii_setword(s, 0x09, 0x0000);   /*                               hi */
-   sii_setword(s, 0x0a, 0x0924);   /* Product code lo */
-   sii_setword(s, 0x0b, 0x0003);   /* Product code hi */
-   sii_setword(s, 0x0c, 0x0420);   /* Revision lo */
-   sii_setword(s, 0x0d, 0x0001);   /* Revision hi */
+   sii_setword(s, 0x08, (uint16_t)(g_vendor_id & 0xFFFFu));
+   sii_setword(s, 0x09, (uint16_t)(g_vendor_id >> 16));
+   sii_setword(s, 0x0a, (uint16_t)(g_product_code & 0xFFFFu));
+   sii_setword(s, 0x0b, (uint16_t)(g_product_code >> 16));
+   sii_setword(s, 0x0c, (uint16_t)(g_revision & 0xFFFFu));
+   sii_setword(s, 0x0d, (uint16_t)(g_revision >> 16));
 
    /* Mailbox configuration (standard offsets used by config_init) */
    sii_setword(s, 0x18, MBX_OUT_ADDR); /* Receive  mailbox offset (SM0) */

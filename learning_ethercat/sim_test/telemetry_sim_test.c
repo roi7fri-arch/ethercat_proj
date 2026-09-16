@@ -32,7 +32,9 @@
 #include "ethercatprint.h"
 
 #include "config_loader.h"
-#include "elmo_config_setup.h"   /* g_ecat_config + elmo_platinum_setup_from_config */
+#include "config_loader.h"   /* g_ecat_config */
+#include "ecat_coe.h"        /* profile-dispatching PO2SOconfig hook */
+#include "vendors.h"
 #include "telemetry.h"
 #include "slave_sim.h"
 
@@ -98,7 +100,7 @@ static int run_to_op(int nslaves)
    if (!ec_init("sim")) return -1;
    if (ec_config_init(FALSE) <= 0) { ec_close(); return -2; }
    for (s = 1; s <= ec_slavecount; s++)
-      ec_slave[s].PO2SOconfig = &elmo_platinum_setup_from_config;
+      ec_slave[s].PO2SOconfig = &ecat_coe_po2so_config;
    ec_config_map(&IOmap);
    ec_statecheck(0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE);
 
@@ -376,6 +378,8 @@ static void test_fault_injection(void)
 int main(int argc, char *argv[])
 {
    if (argc > 1 && strcmp(argv[1], "-v") == 0) slavesim_set_verbose(1);
+
+   vendors_register_all();
 
    printf("=== telemetry <- SOEM master <- virtual slave(s) (no hardware) ===\n");
    test_single_axis();

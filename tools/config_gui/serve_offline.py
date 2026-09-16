@@ -28,6 +28,56 @@ from urllib.parse import urlparse, parse_qs
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
+def _load_param_meta():
+    """backend/param_meta.py if it is there; otherwise parameter editing still
+    works, just without the object catalogue."""
+    for cand in (os.path.join(HERE, "backend"), HERE):
+        if os.path.isfile(os.path.join(cand, "param_meta.py")):
+            sys.path.insert(0, cand)
+            try:
+                import param_meta as _pm  # noqa: E402
+                return _pm
+            except ImportError:
+                pass
+    return None
+
+
+def _param_meta_payload():
+    pm = _load_param_meta()
+    if pm is None:
+        return {
+            "version": 1,
+            "types": [{"id": t, "label": t, "bytes": b} for t, b in
+                      (("u8", 1), ("i8", 1), ("u16", 2), ("i16", 2),
+                       ("u32", 4), ("i32", 4), ("f32", 4))],
+            "default_type": "u32",
+            "catalogue": [],
+            "groups": [],
+            "default_set": {"version": 1, "name": "New parameter set",
+                            "description": "", "parameters": [], "files": []},
+            "default_entry": {"slave": 1, "index": "0x6072", "subindex": 0,
+                              "type": "u16", "value": "1000", "verify": True,
+                              "name": "", "group": "General", "unit": ""},
+            "default_file": {"slave": 1, "path": "", "remote_name": "",
+                             "password": "0x00000000", "use_boot_state": True},
+        }
+    return {
+        "version": pm.PARAM_VERSION,
+        "types": pm.PARAM_TYPES,
+        "default_type": pm.DEFAULT_PARAM_TYPE,
+        "catalogue": pm.PARAM_CATALOGUE,
+        "groups": pm.PARAM_GROUPS,
+        "default_set": pm.default_param_set(),
+        "default_entry": pm.default_param_entry(),
+        "default_file": pm.default_param_file(),
+    }
+
+
+def _param_warnings(param_set):
+    pm = _load_param_meta()
+    return pm.param_warnings(param_set) if pm else []
+
+
 def _load_meta():
     """Use backend/meta.py when present; otherwise fall back to the embedded copy
     below so this script also works when copied on its own."""
@@ -441,8 +491,26 @@ class Handler(BaseHTTPRequestHandler):
                     "mode_templates": {str(k): v for k, v in meta.MODE_TEMPLATES.items()},
                     "profiles": getattr(meta, "PROFILES", []),
                     "default_profile": getattr(meta, "DEFAULT_PROFILE", "elmo_platinum"),
+                    "generic_profile": getattr(meta, "GENERIC_PROFILE", "cia402_generic"),
+                    "firmware_profiles": getattr(meta, "FIRMWARE_PROFILES", []),
                     "map_defaults": getattr(meta, "MAP_DEFAULTS", {}),
                     "default_config": meta.default_config(),
+                })
+            if path == "/api/params/meta":
+                return self._send_json(_param_meta_payload())
+            if path == "/api/params/load":
+                qs = parse_qs(parsed.query)
+                fpath = (qs.get("path", [""])[0] or "").strip()
+                return self._send_json(self._load_json_file(fpath, "parameter set"))
+            if path == "/api/bus/status":
+                # This server is the no-dependency fallback: it deliberately
+                # does not spawn the EtherCAT tool, so bus operations are off.
+                return self._send_json({
+                    "available": False,
+                    "path": None,
+                    "hint": "This is the dependency-free offline server. Run "
+                            "tools/config_gui/start.sh for the full backend, "
+                            "which can drive the bus.",
                 })
             if path == "/api/config/load":
                 qs = parse_qs(parsed.query)
@@ -464,6 +532,16 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/config/save":
                 body = self._read_json_body()
                 return self._send_json(self._save_config(body))
+            if path == "/api/params/validate":
+                body = self._read_json_body()
+                out = dict(body if isinstance(body, dict) else {})
+                out["warnings"] = _param_warnings(out)
+                return self._send_json(out)
+            if path == "/api/params/save":
+                body = self._read_json_body()
+                return self._send_json(self._save_params(body))
+            if path.startswith("/api/bus/"):
+                raise ApiError(503, "the offline server cannot reach the bus")
             raise ApiError(404, "unknown endpoint")
         except ApiError as exc:
             self._send_json({"detail": exc.detail}, status=exc.status)
@@ -478,6 +556,31 @@ class Handler(BaseHTTPRequestHandler):
         except (OSError, ValueError) as exc:
             raise ApiError(400, "cannot read config: %s" % exc)
         return _norm_config(raw)
+
+    def _load_json_file(self, fpath, what):
+        fpath = os.path.expanduser(fpath)
+        if not fpath or not os.path.isfile(fpath):
+            raise ApiError(404, "file not found: %s" % fpath)
+        try:
+            with open(fpath, "r", encoding="utf-8") as fh:
+                return json.load(fh)
+        except (OSError, ValueError) as exc:
+            raise ApiError(400, "cannot read %s: %s" % (what, exc))
+
+    def _save_params(self, body):
+        if not isinstance(body, dict) or "path" not in body or "params" not in body:
+            raise ApiError(400, "save request needs 'path' and 'params'")
+        path = os.path.expanduser(str(body["path"]))
+        parent = os.path.dirname(path) or "."
+        if not os.path.isdir(parent):
+            raise ApiError(400, "directory does not exist: %s" % parent)
+        try:
+            with open(path, "w", encoding="utf-8") as fh:
+                json.dump(body["params"], fh, indent=2)
+                fh.write("\n")
+        except OSError as exc:
+            raise ApiError(400, "cannot write file: %s" % exc)
+        return {"path": os.path.abspath(path), "bytes": os.path.getsize(path)}
 
     def _save_config(self, body):
         if not isinstance(body, dict) or "path" not in body or "config" not in body:

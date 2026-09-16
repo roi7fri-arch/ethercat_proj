@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import PdoTable from "./PdoTable.jsx";
-import { getMeta, saveConfig, loadConfig } from "./api.js";
+import ParamEditor from "./ParamEditor.jsx";
+import BusPanel from "./BusPanel.jsx";
+import {
+  getMeta, saveConfig, loadConfig,
+  getParamMeta, saveParams, loadParams, validateParams,
+  isOffline,
+} from "./api.js";
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
@@ -9,13 +15,43 @@ function modeLabel(modes, value) {
   return m ? m.label : String(value);
 }
 
+/*
+ * The tool now edits two separate documents and can talk to a live bus, so the
+ * single scrolling page became four tabs:
+ *
+ *   General     the things that apply to the whole machine - which NIC, cycle
+ *               time, distributed clocks, recovery policy - plus where the two
+ *               files live.
+ *   Slaves      per-drive bus configuration: profile, mode, PDO maps.
+ *   Parameters  drive tuning written once into the drives' own memory.
+ *   Bus         scan / download / read back over the cable.
+ *
+ * General and Slaves together produce ethercat_config.json; Parameters produces
+ * a separate .params.json. Keeping them apart matters because they have very
+ * different lifecycles - one ships with the machine, the other is edited
+ * constantly during commissioning.
+ */
+const TABS = [
+  { id: "general", label: "General",    hint: "network & files" },
+  { id: "slaves",  label: "Slaves",     hint: "PDO configuration" },
+  { id: "params",  label: "Parameters", hint: "drive tuning" },
+  { id: "bus",     label: "Bus",        hint: "talk to the machine" },
+];
+
 export default function App() {
   const [meta, setMeta] = useState(null);
   const [config, setConfig] = useState(null);
   const [selected, setSelected] = useState(0);
   const [path, setPath] = useState("ethercat_config.json");
   const [toast, setToast] = useState(null);
-  const [preview, setPreview] = useState(false);
+  const [preview, setPreview] = useState(null);   // "config" | "params" | null
+  const [tab, setTab] = useState("general");
+
+  const [pmeta, setPmeta] = useState(null);
+  const [params, setParams] = useState(null);
+  const [paramsPath, setParamsPath] = useState("drive.params.json");
+  const [paramWarnings, setParamWarnings] = useState([]);
+  const [paramsDirty, setParamsDirty] = useState(false);
 
   useEffect(() => {
     getMeta()
@@ -23,7 +59,23 @@ export default function App() {
         setMeta(m);
         setConfig(clone(m.default_config));
       })
-      .catch((e) => setToast({ kind: "error", msg: "Backend not reachable: " + e.message }));
+      .catch((e) =>
+        setToast({ kind: "error", msg: "Backend not reachable: " + e.message }));
+
+    getParamMeta()
+      .then((pm) => {
+        setPmeta(pm);
+        setParams(pm && pm.default_set
+          ? clone(pm.default_set)
+          : { version: 1, name: "New parameter set", description: "",
+              parameters: [], files: [] });
+      })
+      .catch(() => {
+        // Parameter editing still works without the catalogue; it just loses
+        // the picklist.
+        setParams({ version: 1, name: "New parameter set", description: "",
+                    parameters: [], files: [] });
+      });
   }, []);
 
   const slave = config && config.slaves[selected];
@@ -44,7 +96,7 @@ export default function App() {
 
   function flash(kind, msg) {
     setToast({ kind, msg });
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), 4000);
   }
 
   function updateNetwork(field, value) {
@@ -60,9 +112,12 @@ export default function App() {
   function changeProfile(id) {
     const p = profileById(id);
     const patch = { profile: id };
-    // Fill in the vendor id from the profile only when the user hasn't set one.
+    // Fill in the identity from the profile only where the user has not set one.
     if (p && p.default_vendor_id && !slave.expected_vendor_id) {
       patch.expected_vendor_id = p.default_vendor_id;
+    }
+    if (p && p.default_product_code && !slave.expected_product_code) {
+      patch.expected_product_code = p.default_product_code;
     }
     updateSlave(patch);
   }
@@ -131,10 +186,11 @@ export default function App() {
     flash("ok", "Loaded " + modeLabel(meta.modes, slave.mode_of_operation).split(" ")[0] + " template");
   }
 
+  // --- config file I/O ----------------------------------------------------
   async function doSave() {
     try {
       const res = await saveConfig(path, config);
-      flash("ok", "Saved " + res.bytes + " bytes → " + res.path);
+      flash("ok", "Saved config: " + res.bytes + " bytes → " + res.path);
     } catch (e) {
       flash("error", "Save failed: " + e.message);
     }
@@ -151,10 +207,54 @@ export default function App() {
     }
   }
 
-  const previewJson = useMemo(
-    () => (config ? JSON.stringify(config, null, 2) : ""),
-    [config]
-  );
+  // --- parameter set file I/O --------------------------------------------
+  async function doSaveParams() {
+    try {
+      const res = await saveParams(paramsPath, params);
+      setParamsDirty(false);
+      flash("ok", "Saved parameters: " + res.bytes + " bytes → " + res.path);
+    } catch (e) {
+      flash("error", "Save failed: " + e.message);
+    }
+  }
+
+  async function doLoadParams(overridePath) {
+    const p = overridePath || paramsPath;
+    try {
+      const set = await loadParams(p);
+      setParams(set);
+      setParamWarnings(set.warnings || []);
+      setParamsDirty(false);
+      if (overridePath) setParamsPath(overridePath);
+      flash("ok", "Loaded " + p);
+    } catch (e) {
+      flash("error", "Load failed: " + e.message);
+    }
+  }
+
+  async function checkParams() {
+    try {
+      const res = await validateParams(params);
+      setParamWarnings(res.warnings || []);
+      flash(res.warnings && res.warnings.length ? "error" : "ok",
+            res.warnings && res.warnings.length
+              ? res.warnings.length + " thing(s) worth checking"
+              : "Parameter set looks fine");
+    } catch (e) {
+      flash("error", "Check failed: " + e.message);
+    }
+  }
+
+  function onParamsChange(next) {
+    setParams(next);
+    setParamsDirty(true);
+  }
+
+  const previewJson = useMemo(() => {
+    if (preview === "config") return config ? JSON.stringify(config, null, 2) : "";
+    if (preview === "params") return params ? JSON.stringify(params, null, 2) : "";
+    return "";
+  }, [preview, config, params]);
 
   if (!meta || !config) {
     return (
@@ -171,239 +271,370 @@ export default function App() {
           <span className="logo">⚙</span>
           <div>
             <h1>EtherCAT Config Builder</h1>
-            <span className="muted">generates the JSON the master reads on init</span>
+            <span className="muted">
+              bus configuration · drive parameters · download over the cable
+            </span>
           </div>
         </div>
         <div className="file-bar">
-          <input
-            className="path"
-            value={path}
-            onChange={(e) => setPath(e.target.value)}
-            placeholder="config path"
-          />
-          <button onClick={doLoad}>Load</button>
-          <button className="primary" onClick={doSave}>Save</button>
-          <button onClick={() => setPreview(true)}>Preview JSON</button>
+          {tab === "params" ? (
+            <>
+              <input className="path" value={paramsPath}
+                onChange={(e) => setParamsPath(e.target.value)}
+                placeholder="parameter set path" />
+              <button onClick={() => doLoadParams()}>Load</button>
+              <button className="primary" onClick={doSaveParams}>
+                Save{paramsDirty ? " •" : ""}
+              </button>
+              <button onClick={() => setPreview("params")}>Preview JSON</button>
+            </>
+          ) : (
+            <>
+              <input className="path" value={path}
+                onChange={(e) => setPath(e.target.value)}
+                placeholder="config path" />
+              <button onClick={doLoad}>Load</button>
+              <button className="primary" onClick={doSave}>Save</button>
+              <button onClick={() => setPreview("config")}>Preview JSON</button>
+            </>
+          )}
         </div>
       </header>
 
-      <section className="network card">
-        <h2>Network</h2>
-        <div className="grid">
-          <label>Interface
-            <input value={config.network.interface}
-              onChange={(e) => updateNetwork("interface", e.target.value)} />
-          </label>
-          <label>Redundant interface (2nd NIC)
-            <input value={config.network.redundant_interface || ""}
-              placeholder="blank = no cable redundancy"
-              title="Optional second NIC for EtherCAT cable redundancy (ec_init_redundant). Leave blank to use a single interface."
-              onChange={(e) => updateNetwork("redundant_interface", e.target.value)} />
-          </label>
-          <label>Cycle time (µs)
-            <input type="number" value={config.network.cycle_time_us}
-              onChange={(e) => updateNetwork("cycle_time_us", Number(e.target.value))} />
-          </label>
-          <label>Cycles (0 = ∞)
-            <input type="number" value={config.network.number_of_cycles}
-              onChange={(e) => updateNetwork("number_of_cycles", Number(e.target.value))} />
-          </label>
-          <label>SYNC0 shift (µs)
-            <input type="number" value={config.network.sync0_shift_us}
-              onChange={(e) => updateNetwork("sync0_shift_us", Number(e.target.value))} />
-          </label>
-          <label>Sync Kp divisor
-            <input type="number" value={config.network.sync_kp_div}
-              onChange={(e) => updateNetwork("sync_kp_div", Number(e.target.value))} />
-          </label>
-          <label>Sync Ki divisor
-            <input type="number" value={config.network.sync_ki_div}
-              onChange={(e) => updateNetwork("sync_ki_div", Number(e.target.value))} />
-          </label>
-          <label className="check">
-            <input type="checkbox" checked={config.network.distributed_clock}
-              onChange={(e) => updateNetwork("distributed_clock", e.target.checked)} />
-            Distributed Clock (SYNC0)
-          </label>
-          <label className="check">
-            <input type="checkbox" checked={config.network.auto_recovery}
-              onChange={(e) => updateNetwork("auto_recovery", e.target.checked)} />
-            Auto recovery
-          </label>
-          <label>Auto recovery timeout (µs)
-            <input type="number" value={config.network.auto_recovery_timeout_us}
-              onChange={(e) => updateNetwork("auto_recovery_timeout_us", Number(e.target.value))} />
-          </label>
-          <label className="check">
-            <input type="checkbox" checked={config.network.verify_identity !== false}
-              onChange={(e) => updateNetwork("verify_identity", e.target.checked)} />
-            Verify slave identity at start-up
-          </label>
+      <nav className="tabs">
+        {TABS.map((t) => (
+          <button key={t.id}
+            className={"tab " + (tab === t.id ? "active" : "")}
+            onClick={() => setTab(t.id)}>
+            <span className="tab-label">{t.label}</span>
+            <span className="tab-hint">{t.hint}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* ---------------------------------------------------------------- */}
+      {tab === "general" && (
+        <div className="tabpane">
+          <section className="network card">
+            <div className="sdo-head">
+              <h2>Network</h2>
+              <span className="muted">
+                applies to the whole segment — saved in the bus config
+              </span>
+            </div>
+            <div className="grid">
+              <label>Interface
+                <input value={config.network.interface}
+                  onChange={(e) => updateNetwork("interface", e.target.value)} />
+              </label>
+              <label>Redundant interface (2nd NIC)
+                <input value={config.network.redundant_interface || ""}
+                  placeholder="blank = no cable redundancy"
+                  title="Optional second NIC for EtherCAT cable redundancy (ec_init_redundant). Leave blank to use a single interface."
+                  onChange={(e) => updateNetwork("redundant_interface", e.target.value)} />
+              </label>
+              <label>Cycle time (µs)
+                <input type="number" value={config.network.cycle_time_us}
+                  onChange={(e) => updateNetwork("cycle_time_us", Number(e.target.value))} />
+              </label>
+              <label>Cycles (0 = ∞)
+                <input type="number" value={config.network.number_of_cycles}
+                  onChange={(e) => updateNetwork("number_of_cycles", Number(e.target.value))} />
+              </label>
+            </div>
+          </section>
+
+          <section className="card">
+            <div className="sdo-head">
+              <h2>Distributed clocks</h2>
+              <span className="muted">phase-locks the drives to the master cycle</span>
+            </div>
+            <div className="grid">
+              <label className="check">
+                <input type="checkbox" checked={config.network.distributed_clock}
+                  onChange={(e) => updateNetwork("distributed_clock", e.target.checked)} />
+                Distributed Clock (SYNC0)
+              </label>
+              <label>SYNC0 shift (µs)
+                <input type="number" value={config.network.sync0_shift_us}
+                  onChange={(e) => updateNetwork("sync0_shift_us", Number(e.target.value))} />
+              </label>
+              <label title="Larger divisor = softer correction.">Sync Kp divisor
+                <input type="number" value={config.network.sync_kp_div}
+                  onChange={(e) => updateNetwork("sync_kp_div", Number(e.target.value))} />
+              </label>
+              <label title="Larger divisor = softer correction.">Sync Ki divisor
+                <input type="number" value={config.network.sync_ki_div}
+                  onChange={(e) => updateNetwork("sync_ki_div", Number(e.target.value))} />
+              </label>
+            </div>
+          </section>
+
+          <section className="card">
+            <div className="sdo-head">
+              <h2>Robustness</h2>
+              <span className="muted">what the master does when a slave misbehaves</span>
+            </div>
+            <div className="grid">
+              <label className="check">
+                <input type="checkbox" checked={config.network.auto_recovery}
+                  onChange={(e) => updateNetwork("auto_recovery", e.target.checked)} />
+                Auto recovery
+              </label>
+              <label>Auto recovery timeout (µs)
+                <input type="number" value={config.network.auto_recovery_timeout_us}
+                  onChange={(e) => updateNetwork("auto_recovery_timeout_us", Number(e.target.value))} />
+              </label>
+              <label className="check">
+                <input type="checkbox" checked={config.network.verify_identity !== false}
+                  onChange={(e) => updateNetwork("verify_identity", e.target.checked)} />
+                Verify slave identity at start-up
+              </label>
+            </div>
+          </section>
+
+          <section className="card">
+            <div className="sdo-head">
+              <h2>Files</h2>
+              <span className="muted">two documents, different lifecycles</span>
+            </div>
+            <div className="grid">
+              <label title="Read by the master at every start-up. Ships with the machine.">
+                Bus configuration
+                <input value={path} onChange={(e) => setPath(e.target.value)} />
+              </label>
+              <label title="Written into the drives once during commissioning.">
+                Parameter set
+                <input value={paramsPath}
+                  onChange={(e) => setParamsPath(e.target.value)} />
+              </label>
+            </div>
+            <p className="muted">
+              The bus configuration describes the machine and is read every time
+              the master starts. A parameter set is commissioning data — gains,
+              limits, scaling — written into the drives’ own memory once and kept
+              there. They are separate files because they change at very
+              different rates.
+            </p>
+            {isOffline && (
+              <p className="muted">
+                Offline single-file build: Load and Save use the browser’s file
+                picker and downloads folder, and the Bus tab is unavailable.
+              </p>
+            )}
+          </section>
         </div>
-      </section>
+      )}
 
-      <div className="body">
-        <aside className="slaves card">
-          <div className="slaves-head">
-            <h2>Slaves</h2>
-            <span className="muted">bus order</span>
-          </div>
-          <ul className="slave-list">
-            {config.slaves.map((s, i) => (
-              <li
-                key={i}
-                className={i === selected ? "active" : ""}
-                onClick={() => setSelected(i)}
-              >
-                <span className="pos">{i + 1}</span>
-                <span className="sname">{s.name || "slave"}</span>
-                <span className="tag">{modeLabel(meta.modes, s.mode_of_operation).split(" ")[0]}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="slave-actions">
-            <button onClick={addSlave}>+ Add</button>
-            <button onClick={duplicateSlave} disabled={!slave}>Duplicate</button>
-            <button className="danger" onClick={removeSlave} disabled={!slave}>Remove</button>
-          </div>
-        </aside>
+      {/* ---------------------------------------------------------------- */}
+      {tab === "slaves" && (
+        <div className="body">
+          <aside className="slaves card">
+            <div className="slaves-head">
+              <h2>Slaves</h2>
+              <span className="muted">bus order</span>
+            </div>
+            <ul className="slave-list">
+              {config.slaves.map((s, i) => (
+                <li key={i}
+                  className={i === selected ? "active" : ""}
+                  onClick={() => setSelected(i)}>
+                  <span className="pos">{i + 1}</span>
+                  <span className="sname">{s.name || "slave"}</span>
+                  <span className="tag">
+                    {modeLabel(meta.modes, s.mode_of_operation).split(" ")[0]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="slave-actions">
+              <button onClick={addSlave}>+ Add</button>
+              <button onClick={duplicateSlave} disabled={!slave}>Duplicate</button>
+              <button className="danger" onClick={removeSlave} disabled={!slave}>Remove</button>
+            </div>
+          </aside>
 
-        <main className="detail">
-          {slave ? (
-            <>
-              <div className="slave-head card">
-                <label>Name
-                  <input value={slave.name}
-                    onChange={(e) => updateSlave({ name: e.target.value })} />
-                </label>
-                {profiles.length > 0 && (
-                  <label title="Drive family. Selects the object picklist and mode templates. The drive's own SII still drives per-slave SM sizing at run-time.">Drive profile
-                    <select value={slave.profile || (meta.default_profile || "")}
-                      onChange={(e) => changeProfile(e.target.value)}>
-                      {profiles.map((p) => (
-                        <option key={p.id} value={p.id}>{p.label}</option>
+          <main className="detail">
+            {slave ? (
+              <>
+                <div className="slave-head card">
+                  <label>Name
+                    <input value={slave.name}
+                      onChange={(e) => updateSlave({ name: e.target.value })} />
+                  </label>
+                  {profiles.length > 0 && (
+                    <label title="Drive family. Selects the object picklist and mode templates. The drive's own SII still drives per-slave SM sizing at run-time.">Drive profile
+                      <select value={slave.profile || (meta.default_profile || "")}
+                        onChange={(e) => changeProfile(e.target.value)}>
+                        {profiles.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.label}{p.firmware ? "" : "  (generic CiA 402)"}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  {activeProfile && (
+                    <p className="profile-note">
+                      {activeProfile.description}
+                      {!activeProfile.firmware && (
+                        <><br/><strong>No dedicated driver in the master.</strong>{" "}
+                        This drive will run as <code>{activeProfile.falls_back_to}</code>:
+                        standard CiA 402, no vendor quirks or fault decoding.</>
+                      )}
+                    </p>
+                  )}
+                  <label>Mode of operation
+                    <select value={slave.mode_of_operation}
+                      onChange={(e) => updateSlave({ mode_of_operation: Number(e.target.value) })}>
+                      {meta.modes.map((m) => (
+                        <option key={m.value} value={m.value}>{m.label}</option>
                       ))}
                     </select>
                   </label>
-                )}
-                <label>Mode of operation
-                  <select value={slave.mode_of_operation}
-                    onChange={(e) => updateSlave({ mode_of_operation: Number(e.target.value) })}>
-                    {meta.modes.map((m) => (
-                      <option key={m.value} value={m.value}>{m.label}</option>
-                    ))}
-                  </select>
-                </label>
-                <button className="primary" onClick={loadTemplate}>Load mode template</button>
-                <label title="Optional. Verified against the drive's SII at start-up; blank = don't check.">Expected Vendor ID
-                  <input value={slave.expected_vendor_id || ""} placeholder="e.g. 0x0000009A"
-                    onChange={(e) => updateSlave({ expected_vendor_id: e.target.value })} />
-                </label>
-                <label title="Optional. Verified against the drive's SII at start-up; blank = don't check.">Expected Product code
-                  <input value={slave.expected_product_code || ""} placeholder="e.g. 0x00030924"
-                    onChange={(e) => updateSlave({ expected_product_code: e.target.value })} />
-                </label>
-                <label title="Optional. Verified against the drive's SII at start-up; blank = don't check.">Expected Revision
-                  <input value={slave.expected_revision || ""} placeholder="e.g. 0x00010420"
-                    onChange={(e) => updateSlave({ expected_revision: e.target.value })} />
-                </label>
-              </div>
-
-              <details className="card advanced">
-                <summary>Advanced: PDO-mapping objects &amp; startup SDOs</summary>
-                <div className="grid">
-                  <label title="First RxPDO mapping object (CiA402 default 0x1600).">RxPDO map base
-                    <input value={slave.rxpdo_map_base || mapDefaults.rxpdo_map_base}
-                      onChange={(e) => updateSlave({ rxpdo_map_base: e.target.value })} />
+                  <button className="primary" onClick={loadTemplate}>Load mode template</button>
+                  <label title="Optional. Verified against the drive's SII at start-up; blank = don't check.">Expected Vendor ID
+                    <input value={slave.expected_vendor_id || ""} placeholder="e.g. 0x0000009A"
+                      onChange={(e) => updateSlave({ expected_vendor_id: e.target.value })} />
                   </label>
-                  <label title="First TxPDO mapping object (CiA402 default 0x1A00).">TxPDO map base
-                    <input value={slave.txpdo_map_base || mapDefaults.txpdo_map_base}
-                      onChange={(e) => updateSlave({ txpdo_map_base: e.target.value })} />
+                  <label title="Optional. Verified against the drive's SII at start-up; blank = don't check.">Expected Product code
+                    <input value={slave.expected_product_code || ""} placeholder="e.g. 0x00030924"
+                      onChange={(e) => updateSlave({ expected_product_code: e.target.value })} />
                   </label>
-                  <label title="SyncManager 2 PDO assignment object (default 0x1C12).">SM2 assign
-                    <input value={slave.sm2_assign || mapDefaults.sm2_assign}
-                      onChange={(e) => updateSlave({ sm2_assign: e.target.value })} />
-                  </label>
-                  <label title="SyncManager 3 PDO assignment object (default 0x1C13).">SM3 assign
-                    <input value={slave.sm3_assign || mapDefaults.sm3_assign}
-                      onChange={(e) => updateSlave({ sm3_assign: e.target.value })} />
-                  </label>
-                  <label title="Max PDO entries packed into each mapping object before spilling to the next.">Entries / map object
-                    <input type="number" min="1" max="64"
-                      value={slave.map_entries_per_obj || mapDefaults.map_entries_per_obj}
-                      onChange={(e) => updateSlave({ map_entries_per_obj: Number(e.target.value) })} />
+                  <label title="Optional. Verified against the drive's SII at start-up; blank = don't check.">Expected Revision
+                    <input value={slave.expected_revision || ""} placeholder="e.g. 0x00010420"
+                      onChange={(e) => updateSlave({ expected_revision: e.target.value })} />
                   </label>
                 </div>
 
-                <div className="sdo-head">
-                  <h4>Startup SDO writes</h4>
-                  <span className="muted">applied in order during PreOP→SafeOP, before PDO mapping</span>
-                </div>
-                <table className="sdo-table">
-                  <thead>
-                    <tr>
-                      <th>Index</th><th>Sub</th><th>Size</th><th>Value</th><th>Comment</th><th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(slave.startup_sdo || []).map((c, i) => (
-                      <tr key={i}>
-                        <td><input value={c.index}
-                          onChange={(e) => updateStartupSdo(i, { index: e.target.value })} /></td>
-                        <td><input type="number" min="0" max="255" value={c.subindex}
-                          onChange={(e) => updateStartupSdo(i, { subindex: Number(e.target.value) })} /></td>
-                        <td>
-                          <select value={c.size}
-                            onChange={(e) => updateStartupSdo(i, { size: Number(e.target.value) })}>
-                            <option value={1}>1</option>
-                            <option value={2}>2</option>
-                            <option value={4}>4</option>
-                          </select>
-                        </td>
-                        <td><input value={c.value}
-                          onChange={(e) => updateStartupSdo(i, { value: e.target.value })} /></td>
-                        <td><input value={c.comment || ""}
-                          onChange={(e) => updateStartupSdo(i, { comment: e.target.value })} /></td>
-                        <td><button className="danger icon" onClick={() => removeStartupSdo(i)}>✕</button></td>
+                <details className="card advanced">
+                  <summary>Advanced: PDO-mapping objects &amp; startup SDOs</summary>
+                  <div className="grid">
+                    <label title="First RxPDO mapping object (CiA402 default 0x1600).">RxPDO map base
+                      <input value={slave.rxpdo_map_base || mapDefaults.rxpdo_map_base}
+                        onChange={(e) => updateSlave({ rxpdo_map_base: e.target.value })} />
+                    </label>
+                    <label title="First TxPDO mapping object (CiA402 default 0x1A00).">TxPDO map base
+                      <input value={slave.txpdo_map_base || mapDefaults.txpdo_map_base}
+                        onChange={(e) => updateSlave({ txpdo_map_base: e.target.value })} />
+                    </label>
+                    <label title="SyncManager 2 PDO assignment object (default 0x1C12).">SM2 assign
+                      <input value={slave.sm2_assign || mapDefaults.sm2_assign}
+                        onChange={(e) => updateSlave({ sm2_assign: e.target.value })} />
+                    </label>
+                    <label title="SyncManager 3 PDO assignment object (default 0x1C13).">SM3 assign
+                      <input value={slave.sm3_assign || mapDefaults.sm3_assign}
+                        onChange={(e) => updateSlave({ sm3_assign: e.target.value })} />
+                    </label>
+                    <label title="Max PDO entries packed into each mapping object before spilling to the next.">Entries / map object
+                      <input type="number" min="1" max="64"
+                        value={slave.map_entries_per_obj || mapDefaults.map_entries_per_obj}
+                        onChange={(e) => updateSlave({ map_entries_per_obj: Number(e.target.value) })} />
+                    </label>
+                  </div>
+
+                  <div className="sdo-head">
+                    <h4>Startup SDO writes</h4>
+                    <span className="muted">
+                      applied during PreOP→SafeOP, before PDO mapping — for the
+                      handful of objects the drive needs before it can be mapped.
+                      Ordinary tuning belongs on the Parameters tab.
+                    </span>
+                  </div>
+                  <table className="sdo-table">
+                    <thead>
+                      <tr>
+                        <th>Index</th><th>Sub</th><th>Size</th><th>Value</th><th>Comment</th><th></th>
                       </tr>
-                    ))}
-                    {(slave.startup_sdo || []).length === 0 && (
-                      <tr><td colSpan={6} className="muted">none — the drive uses its stored defaults</td></tr>
-                    )}
-                  </tbody>
-                </table>
-                <button onClick={addStartupSdo}>+ Add startup SDO</button>
-              </details>
+                    </thead>
+                    <tbody>
+                      {(slave.startup_sdo || []).map((c, i) => (
+                        <tr key={i}>
+                          <td><input value={c.index}
+                            onChange={(e) => updateStartupSdo(i, { index: e.target.value })} /></td>
+                          <td><input type="number" min="0" max="255" value={c.subindex}
+                            onChange={(e) => updateStartupSdo(i, { subindex: Number(e.target.value) })} /></td>
+                          <td>
+                            <select value={c.size}
+                              onChange={(e) => updateStartupSdo(i, { size: Number(e.target.value) })}>
+                              <option value={1}>1</option>
+                              <option value={2}>2</option>
+                              <option value={4}>4</option>
+                            </select>
+                          </td>
+                          <td><input value={c.value}
+                            onChange={(e) => updateStartupSdo(i, { value: e.target.value })} /></td>
+                          <td><input value={c.comment || ""}
+                            onChange={(e) => updateStartupSdo(i, { comment: e.target.value })} /></td>
+                          <td><button className="danger icon" onClick={() => removeStartupSdo(i)}>✕</button></td>
+                        </tr>
+                      ))}
+                      {(slave.startup_sdo || []).length === 0 && (
+                        <tr><td colSpan={6} className="muted">none — the drive uses its stored defaults</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                  <button onClick={addStartupSdo}>+ Add startup SDO</button>
+                </details>
 
-              <div className="maps">
-                <PdoTable
-                  title="RxPDO"
-                  subtitle="master → slave (command)"
-                  entries={slave.rxpdo}
-                  presets={activeOD.rx}
-                  onChange={(rxpdo) => updateSlave({ rxpdo })}
-                />
-                <PdoTable
-                  title="TxPDO"
-                  subtitle="slave → master (feedback)"
-                  entries={slave.txpdo}
-                  presets={activeOD.tx}
-                  onChange={(txpdo) => updateSlave({ txpdo })}
-                />
-              </div>
-            </>
-          ) : (
-            <div className="empty">No slaves. Click “+ Add”.</div>
-          )}
-        </main>
-      </div>
+                <div className="maps">
+                  <PdoTable
+                    title="RxPDO"
+                    subtitle="master → slave (command)"
+                    entries={slave.rxpdo}
+                    presets={activeOD.rx}
+                    onChange={(rxpdo) => updateSlave({ rxpdo })}
+                  />
+                  <PdoTable
+                    title="TxPDO"
+                    subtitle="slave → master (feedback)"
+                    entries={slave.txpdo}
+                    presets={activeOD.tx}
+                    onChange={(txpdo) => updateSlave({ txpdo })}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="empty">No slaves. Click “+ Add”.</div>
+            )}
+          </main>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------------------- */}
+      {tab === "params" && params && (
+        <div className="tabpane">
+          <ParamEditor
+            pmeta={pmeta}
+            params={params}
+            onChange={onParamsChange}
+            slaves={config.slaves}
+            warnings={paramWarnings}
+            onValidate={checkParams}
+          />
+        </div>
+      )}
+
+      {/* ---------------------------------------------------------------- */}
+      {tab === "bus" && (
+        <div className="tabpane">
+          <BusPanel
+            iface={config.network.interface}
+            configPath={path}
+            paramsPath={paramsPath}
+            onParamsPath={setParamsPath}
+            dirty={paramsDirty}
+            onLoadParams={doLoadParams}
+          />
+        </div>
+      )}
 
       {preview && (
-        <div className="modal-backdrop" onClick={() => setPreview(false)}>
+        <div className="modal-backdrop" onClick={() => setPreview(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
-              <h3>Configuration preview</h3>
-              <button className="icon" onClick={() => setPreview(false)}>✕</button>
+              <h3>{preview === "params" ? "Parameter set" : "Configuration"} preview</h3>
+              <button className="icon" onClick={() => setPreview(null)}>✕</button>
             </div>
             <pre className="json">{previewJson}</pre>
           </div>

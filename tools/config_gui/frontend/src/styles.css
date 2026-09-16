@@ -80,13 +80,31 @@ input:focus, select:focus { border-color: var(--accent); }
 .file-bar { display: flex; gap: 8px; align-items: center; }
 .file-bar .path { width: 260px; }
 
-.network .grid {
-  display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 12px; align-items: end;
+/* Field grid, shared by every card that lays out labelled inputs. Originally
+ * only the Network panel had one; the tabbed layout uses the same shape on the
+ * General, Parameters and Bus tabs. */
+.card > .grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 14px;
+  align-items: end;
 }
-.network label, .slave-head label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); min-width: 0; }
-.network label input, .slave-head label input, .slave-head label select { color: var(--text); width: 100%; min-width: 0; }
-.network .check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); }
-.network .check input { width: 16px; height: 16px; }
+.network .grid { grid-template-columns: repeat(4, 1fr) auto; }
+
+.card > .grid > label,
+.network label, .slave-head label {
+  display: flex; flex-direction: column; gap: 5px;
+  font-size: 12px; color: var(--muted); min-width: 0;
+}
+.card > .grid > label input,
+.card > .grid > label select,
+.network label input, .slave-head label input, .slave-head label select {
+  color: var(--text); width: 100%; min-width: 0;
+}
+.card > .grid > label.check,
+.network .check {
+  flex-direction: row; align-items: center; gap: 8px; color: var(--text);
+}
+.card > .grid > label.check input,
+.network .check input { width: 16px; height: 16px; flex: 0 0 auto; }
 
 .body { display: grid; grid-template-columns: 240px 1fr; gap: 16px; margin-top: 16px; }
 
@@ -177,6 +195,132 @@ input:focus, select:focus { border-color: var(--accent); }
 .toast.ok { border-color: var(--ok); color: var(--ok); }
 .toast.error { border-color: var(--danger); color: var(--danger); }
 
+/* ------------------------------------------------------------------------ *
+ * Tabs
+ *
+ * The tool edits two separate documents (bus configuration, parameter set) and
+ * can talk to a live bus, which is far too much for one scrolling page. The
+ * tab strip keeps each concern whole.
+ * ------------------------------------------------------------------------ */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.tabs .tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  padding: 8px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  margin-bottom: -1px;
+}
+.tabs .tab:hover { background: var(--panel); border-color: var(--line); }
+.tabs .tab.active {
+  background: var(--panel);
+  border-color: var(--line);
+  border-bottom: 1px solid var(--panel);
+}
+.tab-label { font-size: 13px; color: var(--text); }
+.tabs .tab.active .tab-label { color: var(--accent); }
+.tab-hint { font-size: 11px; color: var(--muted); }
+
+.tabpane { display: flex; flex-direction: column; gap: 14px; }
+.tabpane > .card > .grid { margin-bottom: 0; }
+
+/* ------------------------------------------------------------------------ *
+ * Parameter editor
+ * ------------------------------------------------------------------------ */
+.params { display: flex; flex-direction: column; gap: 14px; }
+
+.param-add { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.param-add select { min-width: 280px; }
+
+.param-group { margin-bottom: 16px; }
+.param-group h4 {
+  font-size: 12px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--accent); margin: 0 0 6px;
+}
+
+.param-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.param-table th {
+  text-align: left; color: var(--muted); font-weight: 500;
+  padding: 4px 6px; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.param-table td { padding: 3px 6px; vertical-align: middle; }
+.param-table td.mid { text-align: center; }
+.param-table td.mono { font-family: ui-monospace, monospace; }
+.param-table input, .param-table select { width: 100%; padding: 4px 6px; }
+.param-table input.num  { width: 56px; }
+.param-table input.idx  { width: 88px; font-family: ui-monospace, monospace; }
+.param-table input.val  { width: 110px; font-family: ui-monospace, monospace; }
+.param-table input.unit { width: 92px; }
+.param-table select.slave { min-width: 128px; }
+.param-table select.ptype { min-width: 68px; }
+/* The name is the only free-form column, so let it absorb the spare width. */
+.param-table td.grow { width: 100%; }
+.param-table td.rowbtns { white-space: nowrap; display: flex; gap: 3px; }
+.param-table tr.row-bad td { background: rgba(255, 92, 108, .10); }
+
+/* ------------------------------------------------------------------------ *
+ * Bus panel
+ * ------------------------------------------------------------------------ */
+.bus { display: flex; flex-direction: column; gap: 14px; }
+
+.bus-actions {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  margin-top: 10px;
+}
+.bus-actions label.inline {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--muted);
+}
+.bus-actions label.inline input { width: 220px; }
+
+.banner {
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px; margin: 10px 0; font-size: 12px;
+}
+.banner.bad  { border-color: var(--danger); color: var(--danger); }
+.banner.warn { border-color: #d8a33a; color: #d8a33a; }
+.banner p, .banner pre { margin: 6px 0 0; white-space: pre-wrap; font-size: 12px; }
+
+.warnings { border-color: #d8a33a; }
+.warnings h3 { color: #d8a33a; margin-bottom: 6px; }
+.warnings ul { margin: 0; padding-left: 18px; font-size: 12px; color: var(--muted); }
+.warnings li { margin: 3px 0; }
+
+/* Writing to a machine deserves to look different from editing a file. */
+.danger-zone { border-color: rgba(255, 92, 108, .45); }
+.danger-zone h3 { color: var(--danger); }
+label.check.confirm {
+  margin: 10px 0 0; font-size: 13px; color: var(--text);
+}
+
+.bus-result { margin-top: 4px; }
+.bus-result-head {
+  display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap;
+  padding: 10px 12px; border-radius: 8px 8px 0 0;
+  border: 1px solid var(--line); border-bottom: none;
+}
+.bus-result.ok  .bus-result-head { border-color: var(--ok); color: var(--ok); }
+.bus-result.bad .bus-result-head { border-color: var(--danger); color: var(--danger); }
+.bus-result .param-table { border: 1px solid var(--line); border-top: none; }
+.bus-result .err { color: var(--danger); }
+
+.bus-log {
+  margin: 8px 0 0; padding: 10px; max-height: 220px; overflow: auto;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  font-size: 11px; color: var(--muted); white-space: pre-wrap;
+}
+
+label.wide { grid-column: span 2; }
+
 /* Responsive: stack side-by-side panels on narrower screens so the TxPDO map,
  * bits and Add button stay visible without horizontal scrolling. */
 @media (max-width: 1100px) {
@@ -186,6 +330,8 @@ input:focus, select:focus { border-color: var(--accent); }
   .body { grid-template-columns: 1fr; }
   .network .grid { grid-template-columns: repeat(2, 1fr); }
   .slave-head { flex-wrap: wrap; }
+  .tabs { overflow-x: auto; }
+  .param-table { display: block; overflow-x: auto; }
 }
 @media (max-width: 560px) {
   .app { padding: 12px; }
@@ -193,4 +339,6 @@ input:focus, select:focus { border-color: var(--accent); }
   .file-bar { flex-wrap: wrap; }
   .file-bar .path { width: 100%; }
   .network .grid { grid-template-columns: 1fr; }
+  .tab-hint { display: none; }
+  label.wide { grid-column: span 1; }
 }

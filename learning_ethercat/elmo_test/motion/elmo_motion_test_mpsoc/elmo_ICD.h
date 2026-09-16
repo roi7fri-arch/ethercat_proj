@@ -1,40 +1,18 @@
 #ifndef ELMO_ICD_H
 #define ELMO_ICD_H
 
-#define ELMO_EL 1
-#define ELMO_TR 2
+/* Elmo-specific process-image layout.
+ *
+ * The controlword/statusword bit layouts that used to be declared here are
+ * plain CiA 402 and now live in src/drive/cia402.h, shared by every drive
+ * family. Only the Elmo PDO struct layouts below are genuinely vendor-specific
+ * - and those disappear too once the signal-binding layer replaces them.
+ */
+#include "cia402.h"
 
-
-typedef struct PACKED
-{
-	unsigned short switchOn					:1;
-	unsigned short enableVoltage			:1;
-	unsigned short quickStop				:1;
-	unsigned short enableOperation			:1;
-	unsigned short operationModeSpesific	:3;
-	unsigned short faultReset				:1;
-	unsigned short halt						:1;
-	unsigned short reserved					:2;
-	unsigned short manufactorSpecific		:5;
-} Control_Word;
-
-typedef struct PACKED
-{
-	unsigned short readyToSwitchOn			:1;
-	unsigned short switchedOn				:1;
-	unsigned short operationEnabled			:1;
-	unsigned short fault					:1;
-	unsigned short voltageEnabled			:1;
-	unsigned short quickStop				:1;
-	unsigned short switchOnDisabled			:1;
-	unsigned short warning					:1;
-	unsigned short reserved					:1;
-	unsigned short remote					:1;
-	unsigned short targetReached			:1;
-	unsigned short internalLimitActive		:1;
-	unsigned short operationalModeSpecific	:2;
-	unsigned short reserved2				:2;
-} StatusWord;
+/* Legacy names kept so existing call sites keep compiling unchanged. */
+typedef cia402_controlword_bits_t Control_Word;
+typedef cia402_statusword_bits_t  StatusWord;
 
 typedef struct PACKED
 {
