@@ -1,5 +1,19 @@
 # 10 — Proposed Architecture for OUR Master Application
 
+> **Historical. This is not what was built.**
+>
+> This chapter was written before implementation and assumes the **IgH** master
+> (`ecrt_master_*`). The project uses **SOEM** instead, and the code has since
+> been restructured into layers under `src/`.
+>
+> Read it for the reasoning — the thread model, the safety reactions and the
+> distributed-clock discipline all carried over. Do not read it as a map of the
+> code.
+>
+> For what actually exists, see `.github/copilot-instructions.md` in the
+> repository root, and the commit message of the restructuring:
+> `git log -1 pre-modular-refactor..main`.
+
 This ties the theory to a concrete, deterministic design for the MPSoC + Linux + IgH +
 CiA 402 drives system. It's a blueprint, not final code — we refine it as we implement.
 
