@@ -138,6 +138,86 @@ MODE_TEMPLATES = {
 }
 
 
+# --- maxon EPOS4 ----------------------------------------------------------
+# The EPOS4 is plain CiA 402, so it needs no drive_profile_t in src/vendors/.
+# It does not implement any of the Elmo manufacturer objects (0x3610/0x3640/
+# 0x2FE4/0x2FE8/0x2FEC/0xF6F0); its extras live in the maxon manufacturer area
+# instead, which is why it gets its own picklist rather than the Elmo one.
+EPOS4_OBJECTS = {
+    "rx": [
+        _obj("0x6040", 0, 16, "Controlword"),
+        _obj("0x6060", 0, 8, "Modes of operation"),
+        _obj("0x607A", 0, 32, "Target position"),
+        _obj("0x60FF", 0, 32, "Target velocity"),
+        _obj("0x6071", 0, 16, "Target torque"),
+        _obj("0x6072", 0, 16, "Max torque"),
+        _obj("0x60B0", 0, 32, "Position offset"),
+        _obj("0x60B1", 0, 32, "Velocity offset"),
+        _obj("0x60B2", 0, 16, "Torque offset"),
+        _obj("0x60FE", 1, 32, "Digital outputs"),
+    ],
+    "tx": [
+        _obj("0x6041", 0, 16, "Statusword"),
+        _obj("0x6061", 0, 8, "Modes of operation display"),
+        _obj("0x603F", 0, 16, "Error code"),
+        _obj("0x6064", 0, 32, "Position actual value"),
+        _obj("0x606C", 0, 32, "Velocity actual value"),
+        _obj("0x6074", 0, 16, "Torque demand"),
+        _obj("0x6077", 0, 16, "Torque actual value"),
+        _obj("0x6078", 0, 16, "Current actual value"),
+        _obj("0x60F4", 0, 32, "Following error actual value"),
+        _obj("0x60FD", 0, 32, "Digital inputs"),
+        _obj("0x1001", 0, 8, "Error register"),
+        _obj("0x30D1", 1, 32, "EPOS4: analog input voltage"),
+    ],
+}
+
+EPOS4_TEMPLATES = {
+    8: {  # CSP
+        "rx": [
+            _obj("0x6040", 0, 16, "Controlword"),
+            _obj("0x607A", 0, 32, "Target position"),
+            _obj("0x6060", 0, 8, "Modes of operation"),
+        ],
+        "tx": [
+            _obj("0x6041", 0, 16, "Statusword"),
+            _obj("0x6061", 0, 8, "Modes of operation display"),
+            _obj("0x6064", 0, 32, "Position actual value"),
+            _obj("0x606C", 0, 32, "Velocity actual value"),
+            _obj("0x603F", 0, 16, "Error code"),
+        ],
+    },
+    9: {  # CSV
+        "rx": [
+            _obj("0x6040", 0, 16, "Controlword"),
+            _obj("0x60FF", 0, 32, "Target velocity"),
+            _obj("0x6060", 0, 8, "Modes of operation"),
+        ],
+        "tx": [
+            _obj("0x6041", 0, 16, "Statusword"),
+            _obj("0x6061", 0, 8, "Modes of operation display"),
+            _obj("0x606C", 0, 32, "Velocity actual value"),
+            _obj("0x6064", 0, 32, "Position actual value"),
+            _obj("0x603F", 0, 16, "Error code"),
+        ],
+    },
+    10: {  # CST
+        "rx": [
+            _obj("0x6040", 0, 16, "Controlword"),
+            _obj("0x6071", 0, 16, "Target torque"),
+            _obj("0x6060", 0, 8, "Modes of operation"),
+        ],
+        "tx": [
+            _obj("0x6041", 0, 16, "Statusword"),
+            _obj("0x6061", 0, 8, "Modes of operation display"),
+            _obj("0x6077", 0, 16, "Torque actual value"),
+            _obj("0x6064", 0, 32, "Position actual value"),
+            _obj("0x603F", 0, 16, "Error code"),
+        ],
+    },
+}
+
+
 # --- Drive profiles -------------------------------------------------------
 # The tool is vendor-agnostic: a profile bundles the object picklist and the
 # per-mode PDO templates that suit a given drive family. Elmo profiles expose
@@ -228,12 +308,13 @@ PROFILES = [
     {
         "id": "maxon_epos4",
         "label": "maxon EPOS4",
-        "description": "Standard CiA 402 picklist. Fill the identity fields "
-                       "from the drive's ESI file.",
-        "default_vendor_id": "",
+        "description": "Plain CiA 402 with the maxon manufacturer objects. "
+                       "Confirm the identity fields against the drive's ESI "
+                       "file before use.",
+        "default_vendor_id": "0x000000FB",
         "default_product_code": "",
-        "object_dictionary": _STD_OBJECTS,
-        "mode_templates": _STD_TEMPLATES,
+        "object_dictionary": EPOS4_OBJECTS,
+        "mode_templates": EPOS4_TEMPLATES,
     },
 ]
 
